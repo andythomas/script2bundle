@@ -1,0 +1,55 @@
+name: pep8formatting
+on:
+  pull_request:
+    branches: [ main ]
+jobs:
+  autopep8:
+    # Check if the PR is not raised by this workflow and is not from a fork
+    if: startsWith(github.head_ref, 'autopep8-patches') == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Install code formatting tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install autopep8 autoflake isort
+      - name: autoflakecheck
+        id: autoflakecheck
+        continue-on-error: true
+        run: |
+          autoflake --remove-all-unused-imports --exclude "examples" --recursive --in-place --check .
+      - name: autoflake
+        id: autoflake
+        run: |
+          autoflake --remove-all-unused-imports --exclude "examples" --recursive --in-place .
+      - name: autopep8
+        id: autopep8
+        continue-on-error: true
+        run: |
+          autopep8 --recursive --in-place --exclude "examples" --exit-code .
+      - name: isortcheck
+        id: isortcheck
+        continue-on-error: true
+        run: |
+          isort --line-length 80 --skip examples --check .
+      - name: isort-fix
+        id: isortfix
+        run: |
+          isort --line-length 80 --skip examples .
+      - name: Set autopep8 branch name
+        id: vars
+        run: echo ::set-output name=branch-name::"autopep8-patches/${{ github.head_ref }}"
+      - name: Create Pull Request
+        if: steps.autopep8.outcome == 'failure' || steps.autoflakecheck.outcome == 'failure' || steps.isortcheck.outcome == 'failure'
+        uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: pep8formatting action fixes
+          title: Fixes by autopep8 action
+          body: This is an auto-generated PR with fixes by autopep8 and autoflake.
+          labels: autopep8, automated pr
+          branch: ${{ steps.vars.outputs.branch-name }}
+      - name: Fail if autopep8 made changes
+        if: steps.autopep8.outcome == 'failure' || steps.autoflakecheck.outcome == 'failure' || steps.isortcheck.outcome == 'failure'
+        run: exit 1
