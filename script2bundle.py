@@ -4,11 +4,12 @@
 #
 #
 
+import argparse  # cmd line parser
+import os  # mkdir and such
 # import the required packages
-import argparse # cmd line parser
-import os # mkdir and such
-import shutil # copy files
-import sys # find the python3 path
+import plistlib
+import shutil  # copy files
+import sys  # find the python3 path
 
 # minimal example file
 example = '#!' + sys.executable + '''
@@ -30,10 +31,12 @@ if __name__ == '__main__':
 '''
 
 # use a parser to allow some options
-parser = argparse.ArgumentParser(description='Generate an application bundle (Mac OS) from an executable.')
+parser = argparse.ArgumentParser(
+    description='Generate an application bundle (Mac OS) from an executable.')
 
 # The options:
-parser.add_argument('-e', '--executable', type = str, help = 'The existing executable.')
+parser.add_argument('-e', '--executable', type=str,
+                    help='The existing executable.')
 
 # initiate the parsing
 args = parser.parse_args()
@@ -57,8 +60,7 @@ os.makedirs(macos_dir)
 shutil.copy(executable, macos_dir)
 
 # add the Info.plist file
-import plistlib
-info_plist = dict(CFBundleExecutable = executable)
+info_plist = dict(CFBundleExecutable=executable)
 info_filename = os.path.join(contents_dir, 'Info.plist')
 with open(info_filename, 'wb') as infofile:
     plistlib.dump(info_plist, infofile)
