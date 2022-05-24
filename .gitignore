@@ -1,3 +1,5 @@
 # the generated applications bundles and example file
 *.app
+*.icns
+*.png
 example

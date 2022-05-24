@@ -10,6 +10,7 @@ import os  # mkdir and such
 import plistlib
 import shutil  # copy files
 import sys  # find the python3 path
+import icnsutil
 
 # minimal example file
 example = '#!' + sys.executable + '''
@@ -36,7 +37,11 @@ parser = argparse.ArgumentParser(
 
 # The options:
 parser.add_argument('-e', '--executable', type=str,
-                    help='The existing executable.')
+                    help='The existing executable file.')
+
+parser.add_argument('-i', '--icon', type=str,
+                    help='The existing png icon file.')
+
 
 # initiate the parsing
 args = parser.parse_args()
@@ -54,13 +59,27 @@ if executable == None:
 app_name = executable + '.app'
 contents_dir = os.path.join(app_name, 'Contents')
 macos_dir = os.path.join(contents_dir, 'MacOS')
+resources_dir = os.path.join(contents_dir, 'Resources')
 os.makedirs(macos_dir)
+os.makedirs(resources_dir)
 
 # copy the executable in the correct place
 shutil.copy(executable, macos_dir)
 
-# add the Info.plist file
+# add the executable to the Info.plist file
 info_plist = dict(CFBundleExecutable=executable)
+
+# deal with the optional icon file
+if (args.icon != None):
+    icns_file = args.icon + '.icns'
+    icon_img = icnsutil.IcnsFile()
+    icon_img.add_media(file=args.icon)
+    icon_img.write(icns_file)
+    info_plist.update(CFBundleIconFile=icns_file)
+    # copy the icon file in the correct place
+    shutil.move(icns_file, resources_dir)
+
+
 info_filename = os.path.join(contents_dir, 'Info.plist')
 with open(info_filename, 'wb') as infofile:
     plistlib.dump(info_plist, infofile)
