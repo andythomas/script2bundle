@@ -60,14 +60,15 @@ app_name = executable + '.app'
 contents_dir = os.path.join(app_name, 'Contents')
 macos_dir = os.path.join(contents_dir, 'MacOS')
 resources_dir = os.path.join(contents_dir, 'Resources')
-os.makedirs(macos_dir)
-os.makedirs(resources_dir)
+os.makedirs(macos_dir, exist_ok = True)
+os.makedirs(resources_dir, exist_ok = True)
 
 # copy the executable in the correct place
 shutil.copy(executable, macos_dir)
 
 # add the executable to the Info.plist file
-info_plist = dict(CFBundleExecutable=executable)
+head, tail = os.path.split(executable)
+info_plist = dict(CFBundleExecutable=tail)
 
 # deal with the optional icon file
 if (args.icon != None):
@@ -75,9 +76,10 @@ if (args.icon != None):
     icon_img = icnsutil.IcnsFile()
     icon_img.add_media(file=args.icon)
     icon_img.write(icns_file)
-    info_plist.update(CFBundleIconFile=icns_file)
+    head, tail = os.path.split(icns_file)
+    info_plist.update(CFBundleIconFile=tail)
     # copy the icon file in the correct place
-    shutil.move(icns_file, resources_dir)
+    shutil.copy(icns_file, resources_dir)
 
 
 info_filename = os.path.join(contents_dir, 'Info.plist')
