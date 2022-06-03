@@ -1,6 +1,6 @@
 name: pep8formatting
 on:
-  pull_request:
+  push:
     branches: [ main ]
 jobs:
   autopep8:

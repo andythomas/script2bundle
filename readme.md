@@ -2,4 +2,5 @@
 Simply run the script to generate an example file.
 
 Available options:
-- executable: The name of the script to be bundled. 
+- executable: The filename of the script to be bundled.
+- icon: The filename of the icon file (e.g. png) to be used
