@@ -10,6 +10,7 @@ import os  # mkdir and such
 import plistlib
 import shutil  # copy files
 import sys  # find the python3 path
+
 import icnsutil
 
 # minimal example file
@@ -60,8 +61,8 @@ app_name = executable + '.app'
 contents_dir = os.path.join(app_name, 'Contents')
 macos_dir = os.path.join(contents_dir, 'MacOS')
 resources_dir = os.path.join(contents_dir, 'Resources')
-os.makedirs(macos_dir, exist_ok = True)
-os.makedirs(resources_dir, exist_ok = True)
+os.makedirs(macos_dir, exist_ok=True)
+os.makedirs(resources_dir, exist_ok=True)
 
 # copy the executable in the correct place
 shutil.copy(executable, macos_dir)
@@ -69,6 +70,7 @@ shutil.copy(executable, macos_dir)
 # add the executable to the Info.plist file
 head, tail = os.path.split(executable)
 info_plist = dict(CFBundleExecutable=tail)
+info_plist.update(CFBundleName=tail)
 
 # deal with the optional icon file
 if (args.icon != None):
