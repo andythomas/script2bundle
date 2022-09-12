@@ -1,7 +1,7 @@
 # Generate an application bundle (Mac OS) from an executable
 #
 # Initial version 2022 Apr 22 (Andy Thomas)
-#
+# https://github.com/andythomas/script2bundle
 #
 
 import argparse  # cmd line parser
@@ -55,6 +55,14 @@ parser.add_argument('-d', '--destination',
 parser.add_argument('-n', '--name', type=str,
                     help='The name of the app (default: EXECUTABLE.app).')
 
+parser.add_argument('-x', '--extension',
+                    type=str,
+                    help='A file extension to be opened by the app.')
+
+parser.add_argument('--UTTypeIdentifier',
+                    type=str,
+                    help='A suitable reverse identifier (e.g. com.company_name.ext).')
+
 # initiate the parsing
 args = parser.parse_args()
 
@@ -106,6 +114,20 @@ if (args.icon != None):
     info_plist.update(CFBundleIconFile=tail)
     # copy the icon file in the correct place
     shutil.copy(icns_file, resources_dir)
+
+
+# do the optional connection to a file extension
+if (args.extension != None):
+    if (args.UTTypeIdentifier == None):
+        UTTypeIdentifier = 'com.' + name + '.' + args.extension
+    else:
+        UTTypeIdentifier = args.UTTypeIdentifier
+
+    extension_info = [{'UTTypeIdentifier': UTTypeIdentifier,
+          'UTTypeTagSpecification': {'public.filename-extension': [args.extension]}
+          }]
+
+    info_plist.update(UTExportedTypeDeclarations = extension_info)
 
 # write the Info.plist file
 info_filename = os.path.join(contents_dir, 'Info.plist')
