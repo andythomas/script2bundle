@@ -3,6 +3,12 @@
 # Initial version 2022 Apr 22 (Andy Thomas)
 # https://github.com/andythomas/script2bundle
 #
+# For more information on application bundle declarations see:
+#
+# https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_conc/understand_utis_conc.html#//apple_ref/doc/uid/TP40001319-CH202-SW4
+# https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_declare/understand_utis_declare.html#//apple_ref/doc/uid/TP40001319-CH204-SW1
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html#//apple_ref/doc/uid/20001431-101685
+
 
 import argparse  # cmd line parser
 import os
@@ -59,9 +65,14 @@ parser.add_argument('-x', '--extension',
                     type=str,
                     help='A file extension to be opened by the app.')
 
-parser.add_argument('--UTTypeIdentifier',
+parser.add_argument('--BundleTypeRole',
                     type=str,
-                    help='A suitable reverse identifier (e.g. com.company_name.ext).')
+                    choices={'Editor', 'Viewer', 'Shell', 'None'},
+                    default='Viewer',
+                    const='Viewer',
+                    nargs='?',
+                    help='The app’s role with respect to the file extension. (default: %(default)s).')
+
 
 # initiate the parsing
 args = parser.parse_args()
@@ -82,7 +93,12 @@ if (name == None):
     name = tail
 else:
     name = args.name
+bundle_identifier = 'org.script2bundle.' + name 
+info_plist.update(CFBundleIdentifier=bundle_identifier)
 info_plist.update(CFBundleName=name)
+
+# It is an application (not, e.g., a framework)
+info_plist.update(CFBundlePackageType="APPL")
 
 # Determine the destination of the .app file
 head, tail = os.path.split(executable)
@@ -118,13 +134,20 @@ if (args.icon != None):
 
 # do the optional connection to a file extension
 if (args.extension != None):
-    if (args.UTTypeIdentifier == None):
-        UTTypeIdentifier = 'com.' + name + '.' + args.extension
-    else:
-        UTTypeIdentifier = args.UTTypeIdentifier
+    UTTypeIdentifier = bundle_identifier + '.' + args.extension
+    file_type = name + ' ' + args.extension + ' file'
+
+    document_types = [{'LSItemContentTypes': [bundle_identifier + '.' + args.extension],
+                        'CFBundleTypeName': file_type,
+                        'CFBundleTypeRole': args.BundleTypeRole}]
+
+    info_plist.update(CFBundleDocumentTypes = document_types)
+
 
     extension_info = [{'UTTypeIdentifier': UTTypeIdentifier,
-          'UTTypeTagSpecification': {'public.filename-extension': [args.extension]}
+          'UTTypeTagSpecification': {'public.filename-extension': [args.extension]},
+          'UTTypeConformsTo': 'public.data',
+          'UTypeDescription': file_type
           }]
 
     info_plist.update(UTExportedTypeDeclarations = extension_info)
