@@ -125,6 +125,10 @@ elif (args.destination=='system'):
 elif (args.destination=='user'):
     app_name = os.path.join(os.path.expanduser("~"), 'Applications', app_name)
 
+# Delete possible old version 
+if os.path.isdir(app_name):
+    shutil.rmtree(app_name)
+
 # Generate the directory framework
 contents_dir = os.path.join(app_name, 'Contents')
 macos_dir = os.path.join(contents_dir, 'MacOS')
