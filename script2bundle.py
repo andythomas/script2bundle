@@ -88,6 +88,9 @@ parser.add_argument('--BundleTypeRole',
                     nargs='?',
                     help='The app’s role with respect to the file extension. (default: %(default)s).')
 
+parser.add_argument('--launch', 
+                     action='store_true',
+                     help='Launch the app to register properly.')
 
 # initiate the parsing
 args = parser.parse_args()
@@ -179,3 +182,9 @@ if (args.extension != None):
 info_filename = os.path.join(contents_dir, 'Info.plist')
 with open(info_filename, 'wb') as infofile:
     plistlib.dump(info_plist, infofile)
+
+# launch if requested
+if (args.launch):
+    launch_cmd = 'Open ' + app_name
+    print(launch_cmd)
+    os.system(launch_cmd)
