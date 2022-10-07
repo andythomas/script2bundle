@@ -3,18 +3,18 @@
 # Initial version 2022 Apr 22 (Andy Thomas)
 # https://github.com/andythomas/script2bundle
 #
-# For more information on application bundle declarations see:
+# For more information on application bundle declarations, in particular UTIs, please see:
 #
-# https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_conc/understand_utis_conc.html#//apple_ref/doc/uid/TP40001319-CH202-SW4
-# https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_declare/understand_utis_declare.html#//apple_ref/doc/uid/TP40001319-CH204-SW1
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html#//apple_ref/doc/uid/20001431-101685
-
+# https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_declare/understand_utis_declare.html
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_conc/understand_utis_conc.html
 
 import argparse  # cmd line parser
 import os
 import plistlib
 import shutil  # copy files
 import sys  # find the python3 path
+import string 
 
 import icnsutil
 
@@ -36,6 +36,21 @@ def window():
 if __name__ == '__main__':
    window()
 '''
+
+ 
+rfc1035_chars = string.ascii_lowercase + string.digits + '-.'
+
+def is_valid_domain(domain):
+    if not all(char in rfc1035_chars for char in domain.lower()):
+        return False
+    if len(domain) > 253:
+        return False
+    if '--' in domain:
+        return False
+    if '..' in domain:
+        return False
+    return True
+
 
 # use a parser to allow some options
 parser = argparse.ArgumentParser(
@@ -135,6 +150,10 @@ if (args.icon != None):
 # do the optional connection to a file extension
 if (args.extension != None):
     UTTypeIdentifier = bundle_identifier + '.' + args.extension
+    if not is_valid_domain(UTTypeIdentifier):
+        print (f'{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.')
+        sys.exit()
+
     file_type = name + ' ' + args.extension + ' file'
 
     document_types = [{'LSItemContentTypes': [bundle_identifier + '.' + args.extension],
@@ -147,7 +166,7 @@ if (args.extension != None):
     extension_info = [{'UTTypeIdentifier': UTTypeIdentifier,
           'UTTypeTagSpecification': {'public.filename-extension': [args.extension]},
           'UTTypeConformsTo': 'public.data',
-          'UTypeDescription': file_type
+          'UTTypeDescription': file_type
           }]
 
     info_plist.update(UTExportedTypeDeclarations = extension_info)
