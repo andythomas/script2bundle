@@ -14,7 +14,8 @@ import os
 import plistlib
 import shutil  # copy files
 import sys  # find the python3 path
-import string 
+import string
+import time
 
 import icnsutil
 
@@ -37,7 +38,7 @@ if __name__ == '__main__':
    window()
 '''
 
- 
+
 rfc1035_chars = string.ascii_lowercase + string.digits + '-.'
 
 def is_valid_domain(domain):
@@ -88,7 +89,7 @@ parser.add_argument('--BundleTypeRole',
                     nargs='?',
                     help='The app’s role with respect to the file extension. (default: %(default)s).')
 
-parser.add_argument('--launch', 
+parser.add_argument('--launch',
                      action='store_true',
                      help='Launch the app to register properly.')
 
@@ -111,7 +112,7 @@ if (name == None):
     name = tail
 else:
     name = args.name
-bundle_identifier = 'org.script2bundle.' + name 
+bundle_identifier = 'org.script2bundle.' + name
 info_plist.update(CFBundleIdentifier=bundle_identifier)
 info_plist.update(CFBundleName=name)
 
@@ -128,7 +129,7 @@ elif (args.destination=='system'):
 elif (args.destination=='user'):
     app_name = os.path.join(os.path.expanduser("~"), 'Applications', app_name)
 
-# Delete possible old version 
+# Delete possible old version
 if os.path.isdir(app_name):
     shutil.rmtree(app_name)
 
@@ -185,6 +186,7 @@ with open(info_filename, 'wb') as infofile:
 
 # launch if requested
 if (args.launch):
+    time.sleep(5)
     launch_cmd = 'Open ' + app_name
     print(launch_cmd)
     os.system(launch_cmd)
