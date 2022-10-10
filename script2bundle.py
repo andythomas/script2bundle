@@ -184,7 +184,7 @@ info_filename = os.path.join(contents_dir, 'Info.plist')
 with open(info_filename, 'wb') as infofile:
     plistlib.dump(info_plist, infofile)
 
-# launch if requested
+# launch if requested; the sleep required to allow the system to recognize the new app
 if (args.launch):
     time.sleep(5)
     launch_cmd = 'Open ' + app_name
