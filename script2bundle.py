@@ -42,7 +42,7 @@ if __name__ == '__main__':
    window()
 '''
 
-
+# helper to check the validity of the Uniform Type Identifiers
 rfc1035_chars = string.ascii_lowercase + string.digits + '-.'
 
 def is_valid_domain(domain):
@@ -62,7 +62,7 @@ parser = argparse.ArgumentParser(
     description='Generate an application bundle (Mac OS) from an executable.')
 
 # The options:
-parser.add_argument('-e', '--executable',
+parser.add_argument('-e', '--CFBundleExecutable',
                     type=str,
                     help='The existing executable file.')
 
@@ -78,8 +78,9 @@ parser.add_argument('-d', '--destination',
                     nargs='?',
                     help='The destination of the .app file (default: %(default)s).')
 
-parser.add_argument('-n', '--name', type=str,
-                    help='The name of the app (default: EXECUTABLE.app).')
+parser.add_argument('-f', '--filename', 
+                    type=str,
+                    help='The filename of the app (default: CFBUNDLEEXECUTABLE.app). Omit the .app')
 
 parser.add_argument('-x', '--extension',
                     type=str,
@@ -100,52 +101,60 @@ parser.add_argument('--launch',
 # initiate the parsing
 args = parser.parse_args()
 
-# use the example if no file is given
-executable = args.executable
-if (executable == None):
-    executable = 'example'
-    with open(executable, 'w') as examplefile:
-        examplefile.write(example)
-    os.chmod(executable, 0o755)
+# First, generate the keys and overwrite if explicit key is given
+# app_ precedes all variables to not confuse variables, arguments and plist keys
 
-# add the executable and the name to the Info.plist file
-name = args.name
-head, tail = os.path.split(executable)
+# CFBundleExecutable: Name of the bundle’s executable file
+app_CFBundleExecutable = args.CFBundleExecutable
+if (app_CFBundleExecutable == None):
+    app_CFBundleExecutable = 'example'
+    with open(app_CFBundleExecutable, 'w') as examplefile:
+        examplefile.write(example)
+    os.chmod(app_CFBundleExecutable, 0o755)
+head, tail = os.path.split(app_CFBundleExecutable)
+# start the plist file with the name of the executable
 info_plist = dict(CFBundleExecutable=tail)
-if (name == None):
-    name = tail
-else:
-    name = args.name
-bundle_identifier = 'org.script2bundle.' + name
-info_plist.update(CFBundleIdentifier=bundle_identifier)
-info_plist.update(CFBundleName=name)
+
+# The bundle needs a filename
+app_filename = args.filename
+if (app_filename == None):
+    app_filename = tail
+app_filename = app_filename + '.app'
+
+# The bundle needs a name to be displayed
+app_CFBundleDisplayName = tail
+# add parser argument for optional overwrite later
+info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
+
+# A bundle identifier is strongle recommended
+app_CFBundleIdentifier = 'org.script2bundle.' + tail
+# add parser argument for optional overwrite later
+info_plist.update(CFBundleIdentifier=app_CFBundleIdentifier)
 
 # It is an application (not, e.g., a framework)
 info_plist.update(CFBundlePackageType="APPL")
 
 # Determine the destination of the .app file
-head, tail = os.path.split(executable)
-app_name = name + '.app'
 if (args.destination=='executable'):
-    app_name = os.path.join(head, app_name)
+    app_filename = os.path.join(head, app_filename)
 elif (args.destination=='system'):
-    app_name = os.path.join('/Applications', app_name)
+    app_filename = os.path.join('/Applications', app_filename)
 elif (args.destination=='user'):
-    app_name = os.path.join(os.path.expanduser("~"), 'Applications', app_name)
+    app_filename = os.path.join(os.path.expanduser("~"), 'Applications', app_filename)
 
 # Delete possible old version
-if os.path.isdir(app_name):
-    shutil.rmtree(app_name)
+if os.path.isdir(app_filename):
+    shutil.rmtree(app_filename)
 
 # Generate the directory framework
-contents_dir = os.path.join(app_name, 'Contents')
+contents_dir = os.path.join(app_filename, 'Contents')
 macos_dir = os.path.join(contents_dir, 'MacOS')
 resources_dir = os.path.join(contents_dir, 'Resources')
 os.makedirs(macos_dir, exist_ok=True)
 os.makedirs(resources_dir, exist_ok=True)
 
 # copy the executable in the correct place
-shutil.copy(executable, macos_dir)
+shutil.copy(app_CFBundleExecutable, macos_dir)
 
 # deal with the optional icon file
 if (args.icon != None):
@@ -157,7 +166,6 @@ if (args.icon != None):
     info_plist.update(CFBundleIconFile=tail)
     # copy the icon file in the correct place
     shutil.copy(icns_file, resources_dir)
-
 
 # do the optional connection to a file extension
 if (args.extension != None):
@@ -191,6 +199,6 @@ with open(info_filename, 'wb') as infofile:
 # launch if requested; sleep required to allow the system to recognize the new app
 if (args.launch):
     time.sleep(5)
-    launch_cmd = 'Open ' + app_name
+    launch_cmd = 'Open ' + app_filename
     print(launch_cmd)
     os.system(launch_cmd)
