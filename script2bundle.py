@@ -64,11 +64,15 @@ parser = argparse.ArgumentParser(
 # The options:
 parser.add_argument('-e', '--CFBundleExecutable',
                     type=str,
-                    help='The existing executable file.')
+                    help='The filename of the (existing) executable file to be bundled.')
+
+parser.add_argument('-f', '--filename', 
+                    type=str,
+                    help='The filename of the app to be generated (without .app)')
 
 parser.add_argument('-i', '--CFBundleIconFile',
                     type=str,
-                    help='The existing png icon file.')
+                    help='The (existing) png to be used as an icon file.')
 
 parser.add_argument('-d', '--destination',
                     type=str,
@@ -78,9 +82,9 @@ parser.add_argument('-d', '--destination',
                     nargs='?',
                     help='The destination of the .app file (default: %(default)s).')
 
-parser.add_argument('-f', '--filename', 
-                    type=str,
-                    help='The filename of the app to be generated (without .app)')
+parser.add_argument('--launch',
+                     action='store_true',
+                     help='Launch the app to register properly.')
 
 parser.add_argument('-x', '--extension',
                     type=str,
@@ -93,10 +97,6 @@ parser.add_argument('--CFBundleTypeRole',
                     const='Viewer',
                     nargs='?',
                     help='The app’s role with respect to the file extension. (default: %(default)s).')
-
-parser.add_argument('--launch',
-                     action='store_true',
-                     help='Launch the app to register properly.')
 
 parser.add_argument('--CFBundleDisplayName',
                     type=str,
