@@ -21,10 +21,14 @@ import icnsutil
 
 # minimal example file
 example = '#!' + sys.executable + '''
-# very simple qt5 executable to demonstrate script2bundle
+# very simple Qt executable to demonstrate script2bundle
 
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget
+try:
+    from PyQt6.QtWidgets import QApplication, QWidget
+except ImportError:
+    from PyQt5.QtWidgets import QApplication, QWidget
+
 
 def window():
    app = QApplication(sys.argv)
@@ -32,7 +36,7 @@ def window():
 
    widget.setWindowTitle("Simple script2bundle example")
    widget.show()
-   sys.exit(app.exec_())
+   sys.exit(app.exec())
 
 if __name__ == '__main__':
    window()
@@ -184,7 +188,7 @@ info_filename = os.path.join(contents_dir, 'Info.plist')
 with open(info_filename, 'wb') as infofile:
     plistlib.dump(info_plist, infofile)
 
-# launch if requested; the sleep required to allow the system to recognize the new app
+# launch if requested; sleep required to allow the system to recognize the new app
 if (args.launch):
     time.sleep(5)
     launch_cmd = 'Open ' + app_name
