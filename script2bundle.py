@@ -66,7 +66,7 @@ parser.add_argument('-e', '--CFBundleExecutable',
                     type=str,
                     help='The existing executable file.')
 
-parser.add_argument('-i', '--icon',
+parser.add_argument('-i', '--CFBundleIconFile',
                     type=str,
                     help='The existing png icon file.')
 
@@ -80,13 +80,13 @@ parser.add_argument('-d', '--destination',
 
 parser.add_argument('-f', '--filename', 
                     type=str,
-                    help='The filename of the app (default: CFBUNDLEEXECUTABLE.app). Omit the .app')
+                    help='The filename of the app to be generated (without .app)')
 
 parser.add_argument('-x', '--extension',
                     type=str,
                     help='A file extension to be opened by the app.')
 
-parser.add_argument('--BundleTypeRole',
+parser.add_argument('--CFBundleTypeRole',
                     type=str,
                     choices={'Editor', 'Viewer', 'Shell', 'None'},
                     default='Viewer',
@@ -98,11 +98,19 @@ parser.add_argument('--launch',
                      action='store_true',
                      help='Launch the app to register properly.')
 
+parser.add_argument('--CFBundleDisplayName',
+                    type=str,
+                    help='Specifies the display name of the bundle, visible to users and used by Siri.')
+
+parser.add_argument('--CFBundleIdentifier',
+                    type=str,
+                    help='An identifier string that specifies the bundle (in reverse DNS format).')
+
 # initiate the parsing
 args = parser.parse_args()
 
 # First, generate the keys and overwrite if explicit key is given
-# app_ precedes all variables to not confuse variables, arguments and plist keys
+# app_ precedes most variables to not confuse variables, arguments and plist keys
 
 # CFBundleExecutable: Name of the bundle’s executable file
 app_CFBundleExecutable = args.CFBundleExecutable
@@ -123,12 +131,17 @@ app_filename = app_filename + '.app'
 
 # The bundle needs a name to be displayed
 app_CFBundleDisplayName = tail
-# add parser argument for optional overwrite later
+if (args.CFBundleDisplayName != None):
+    app_CFBundleDisplayName = args.CFBundleDisplayName
 info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
 
 # A bundle identifier is strongle recommended
 app_CFBundleIdentifier = 'org.script2bundle.' + tail
-# add parser argument for optional overwrite later
+if (args.CFBundleIdentifier != None):
+    app_CFBundleIdentifier = args.CFBundleIdentifier
+if not is_valid_domain(app_CFBundleIdentifier):
+        print (f'{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.')
+        sys.exit(1)
 info_plist.update(CFBundleIdentifier=app_CFBundleIdentifier)
 
 # It is an application (not, e.g., a framework)
@@ -156,49 +169,49 @@ os.makedirs(resources_dir, exist_ok=True)
 # copy the executable in the correct place
 shutil.copy(app_CFBundleExecutable, macos_dir)
 
-# deal with the optional icon file
-if (args.icon != None):
-    icns_file = args.icon + '.icns'
+# Add the optional icon file if requested
+if (args.CFBundleIconFile != None):
+    app_CFBundleIconFile = args.CFBundleIconFile + '.icns'
+    # generate the proper filetype from a png
     icon_img = icnsutil.IcnsFile()
-    icon_img.add_media(file=args.icon)
-    icon_img.write(icns_file)
-    head, tail = os.path.split(icns_file)
+    icon_img.add_media(file=args.CFBundleIconFile)
+    icon_img.write(app_CFBundleIconFile)
+    head, tail = os.path.split(app_CFBundleIconFile)
+    # copy the icon file in the correct place and update plist
+    shutil.copy(app_CFBundleIconFile, resources_dir)
     info_plist.update(CFBundleIconFile=tail)
-    # copy the icon file in the correct place
-    shutil.copy(icns_file, resources_dir)
 
-# do the optional connection to a file extension
+# Do the optional connection to a file extension
 if (args.extension != None):
-    UTTypeIdentifier = bundle_identifier + '.' + args.extension
+    UTTypeIdentifier = app_CFBundleIdentifier + '.' + args.extension
     if not is_valid_domain(UTTypeIdentifier):
         print (f'{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.')
-        sys.exit()
+        sys.exit(1)
 
-    file_type = name + ' ' + args.extension + ' file'
+    file_type = app_CFBundleDisplayName + ' ' + args.extension + ' file'
 
-    document_types = [{'LSItemContentTypes': [bundle_identifier + '.' + args.extension],
-                        'CFBundleTypeName': file_type,
-                        'CFBundleTypeRole': args.BundleTypeRole}]
+    app_CFBundleDocumentTypes = [{'LSItemContentTypes': [UTTypeIdentifier],
+                                  'CFBundleTypeName': file_type,
+                                  'CFBundleTypeRole': args.CFBundleTypeRole}]
 
-    info_plist.update(CFBundleDocumentTypes = document_types)
+    info_plist.update(CFBundleDocumentTypes = app_CFBundleDocumentTypes)
 
+    app_UTExportedTypeDeclarations = [{'UTTypeIdentifier': UTTypeIdentifier,
+                                       'UTTypeTagSpecification': {'public.filename-extension': [args.extension]},
+                                       'UTTypeConformsTo': 'public.data',
+                                       'UTTypeDescription': file_type
+                                      }]
 
-    extension_info = [{'UTTypeIdentifier': UTTypeIdentifier,
-          'UTTypeTagSpecification': {'public.filename-extension': [args.extension]},
-          'UTTypeConformsTo': 'public.data',
-          'UTTypeDescription': file_type
-          }]
+    info_plist.update(UTExportedTypeDeclarations = app_UTExportedTypeDeclarations)
 
-    info_plist.update(UTExportedTypeDeclarations = extension_info)
-
-# write the Info.plist file
+# Write the Info.plist file
 info_filename = os.path.join(contents_dir, 'Info.plist')
 with open(info_filename, 'wb') as infofile:
     plistlib.dump(info_plist, infofile)
 
-# launch if requested; sleep required to allow the system to recognize the new app
+# Launch if requested; sleep required to allow the system to recognize the new app
 if (args.launch):
-    time.sleep(5)
+    time.sleep(2)
     launch_cmd = 'Open ' + app_filename
     print(launch_cmd)
     os.system(launch_cmd)
