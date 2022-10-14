@@ -62,7 +62,7 @@ parser = argparse.ArgumentParser(
     description='Generate an application bundle (Mac OS) from an executable.')
 
 # The options:
-parser.add_argument('-e', '--CFBundleExecutable',
+parser.add_argument('-e', '--executable',
                     type=str,
                     help='The filename of the (existing) executable file to be bundled.')
 
@@ -102,10 +102,6 @@ parser.add_argument('--CFBundleDisplayName',
                     type=str,
                     help='Specifies the display name of the bundle, visible to users and used by Siri.')
 
-parser.add_argument('--CFBundleIdentifier',
-                    type=str,
-                    help='An identifier string that specifies the bundle (in reverse DNS format).')
-
 # initiate the parsing
 args = parser.parse_args()
 
@@ -113,13 +109,22 @@ args = parser.parse_args()
 # app_ precedes most variables to not confuse variables, arguments and plist keys
 
 # CFBundleExecutable: Name of the bundle’s executable file
-app_CFBundleExecutable = args.CFBundleExecutable
-if (app_CFBundleExecutable == None):
-    app_CFBundleExecutable = 'example'
-    with open(app_CFBundleExecutable, 'w') as examplefile:
+app_executable = args.executable
+if (app_executable == None):
+    app_executable = 'example'
+    with open(app_executable, 'w') as examplefile:
         examplefile.write(example)
-    os.chmod(app_CFBundleExecutable, 0o755)
-head, tail = os.path.split(app_CFBundleExecutable)
+    os.chmod(app_executable, 0o755)
+head, tail = os.path.split(app_executable)
+# Strip 'problematic' characters
+move_file = False
+clean_executable = ''.join(filter(str.isalnum, tail))
+if (clean_executable != tail):
+    print(f'Warning: Stripping characters from filename and duplicating executable ({clean_executable}).')
+    clean_filename = os.path.join(head, clean_executable)
+    shutil.copyfile(app_executable, clean_filename)
+    move_file = True
+
 # start the plist file with the name of the executable
 info_plist = dict(CFBundleExecutable=tail)
 
@@ -135,10 +140,8 @@ if (args.CFBundleDisplayName != None):
     app_CFBundleDisplayName = args.CFBundleDisplayName
 info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
 
-# A bundle identifier is strongle recommended
+# A bundle identifier is strongly recommended
 app_CFBundleIdentifier = 'org.script2bundle.' + tail
-if (args.CFBundleIdentifier != None):
-    app_CFBundleIdentifier = args.CFBundleIdentifier
 if not is_valid_domain(app_CFBundleIdentifier):
         print (f'{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.')
         sys.exit(1)
@@ -167,7 +170,11 @@ os.makedirs(macos_dir, exist_ok=True)
 os.makedirs(resources_dir, exist_ok=True)
 
 # copy the executable in the correct place
-shutil.copy(app_CFBundleExecutable, macos_dir)
+if move_file:
+    shutil.move(app_executable, macos_dir)
+else:
+    shutil.copy(app_executable, macos_dir)
+
 
 # Add the optional icon file if requested
 if (args.CFBundleIconFile != None):
