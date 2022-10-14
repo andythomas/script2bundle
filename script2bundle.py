@@ -45,6 +45,7 @@ if __name__ == '__main__':
 # helper to check the validity of the Uniform Type Identifiers
 rfc1035_chars = string.ascii_lowercase + string.digits + '-.'
 
+
 def is_valid_domain(domain):
     if not all(char in rfc1035_chars for char in domain.lower()):
         return False
@@ -66,7 +67,7 @@ parser.add_argument('-e', '--executable',
                     type=str,
                     help='The filename of the (existing) executable file to be bundled.')
 
-parser.add_argument('-f', '--filename', 
+parser.add_argument('-f', '--filename',
                     type=str,
                     help='The filename of the app to be generated (without .app)')
 
@@ -83,8 +84,8 @@ parser.add_argument('-d', '--destination',
                     help='The destination of the .app file (default: %(default)s).')
 
 parser.add_argument('--launch',
-                     action='store_true',
-                     help='Launch the app to register properly.')
+                    action='store_true',
+                    help='Launch the app to register properly.')
 
 parser.add_argument('-x', '--extension',
                     type=str,
@@ -120,7 +121,8 @@ head, tail = os.path.split(app_executable)
 move_file = False
 clean_executable = ''.join(filter(str.isalnum, tail))
 if (clean_executable != tail):
-    print(f'Warning: Stripping characters from filename and duplicating executable ({clean_executable}).')
+    print(
+        f'Warning: Stripping characters from filename and duplicating executable ({clean_executable}).')
     clean_filename = os.path.join(head, clean_executable)
     shutil.copy2(app_executable, clean_filename)
     app_executable = clean_filename
@@ -129,14 +131,12 @@ if (clean_executable != tail):
 # start the plist file with the name of the executable
 info_plist = dict(CFBundleExecutable=clean_executable)
 
-# The bundle needs a filename
+# The bundle needs a filename and a name to be displayed
 app_filename = args.filename
 if (app_filename == None):
-    app_filename = clean_filename
+    app_filename = clean_executable
+app_CFBundleDisplayName = app_filename
 app_filename = app_filename + '.app'
-
-# The bundle needs a name to be displayed
-app_CFBundleDisplayName = clean_executable
 if (args.CFBundleDisplayName != None):
     app_CFBundleDisplayName = args.CFBundleDisplayName
 info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
@@ -144,20 +144,21 @@ info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
 # A bundle identifier is strongly recommended
 app_CFBundleIdentifier = 'org.script2bundle.' + clean_executable
 if not is_valid_domain(app_CFBundleIdentifier):
-        print (f'{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.')
-        sys.exit(1)
+    print(f'{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.')
+    sys.exit(1)
 info_plist.update(CFBundleIdentifier=app_CFBundleIdentifier)
 
 # It is an application (not, e.g., a framework)
 info_plist.update(CFBundlePackageType="APPL")
 
 # Determine the destination of the .app file
-if (args.destination=='executable'):
+if (args.destination == 'executable'):
     app_filename = os.path.join(head, app_filename)
-elif (args.destination=='system'):
+elif (args.destination == 'system'):
     app_filename = os.path.join('/Applications', app_filename)
-elif (args.destination=='user'):
-    app_filename = os.path.join(os.path.expanduser("~"), 'Applications', app_filename)
+elif (args.destination == 'user'):
+    app_filename = os.path.join(os.path.expanduser(
+        "~"), 'Applications', app_filename)
 
 # Delete possible old version
 if os.path.isdir(app_filename):
@@ -193,7 +194,8 @@ if (args.CFBundleIconFile != None):
 if (args.extension != None):
     UTTypeIdentifier = app_CFBundleIdentifier + '.' + args.extension
     if not is_valid_domain(UTTypeIdentifier):
-        print (f'{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.')
+        print(
+            f'{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.')
         sys.exit(1)
 
     file_type = app_CFBundleDisplayName + ' ' + args.extension + ' file'
@@ -202,15 +204,16 @@ if (args.extension != None):
                                   'CFBundleTypeName': file_type,
                                   'CFBundleTypeRole': args.CFBundleTypeRole}]
 
-    info_plist.update(CFBundleDocumentTypes = app_CFBundleDocumentTypes)
+    info_plist.update(CFBundleDocumentTypes=app_CFBundleDocumentTypes)
 
     app_UTExportedTypeDeclarations = [{'UTTypeIdentifier': UTTypeIdentifier,
                                        'UTTypeTagSpecification': {'public.filename-extension': [args.extension]},
                                        'UTTypeConformsTo': 'public.data',
                                        'UTTypeDescription': file_type
-                                      }]
+                                       }]
 
-    info_plist.update(UTExportedTypeDeclarations = app_UTExportedTypeDeclarations)
+    info_plist.update(
+        UTExportedTypeDeclarations=app_UTExportedTypeDeclarations)
 
 # Write the Info.plist file
 info_filename = os.path.join(contents_dir, 'Info.plist')
