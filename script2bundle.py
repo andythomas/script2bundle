@@ -122,26 +122,27 @@ clean_executable = ''.join(filter(str.isalnum, tail))
 if (clean_executable != tail):
     print(f'Warning: Stripping characters from filename and duplicating executable ({clean_executable}).')
     clean_filename = os.path.join(head, clean_executable)
-    shutil.copyfile(app_executable, clean_filename)
+    shutil.copy2(app_executable, clean_filename)
+    app_executable = clean_filename
     move_file = True
 
 # start the plist file with the name of the executable
-info_plist = dict(CFBundleExecutable=tail)
+info_plist = dict(CFBundleExecutable=clean_executable)
 
 # The bundle needs a filename
 app_filename = args.filename
 if (app_filename == None):
-    app_filename = tail
+    app_filename = clean_filename
 app_filename = app_filename + '.app'
 
 # The bundle needs a name to be displayed
-app_CFBundleDisplayName = tail
+app_CFBundleDisplayName = clean_executable
 if (args.CFBundleDisplayName != None):
     app_CFBundleDisplayName = args.CFBundleDisplayName
 info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
 
 # A bundle identifier is strongly recommended
-app_CFBundleIdentifier = 'org.script2bundle.' + tail
+app_CFBundleIdentifier = 'org.script2bundle.' + clean_executable
 if not is_valid_domain(app_CFBundleIdentifier):
         print (f'{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.')
         sys.exit(1)
