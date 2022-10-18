@@ -1,0 +1,17 @@
+[project]
+name = "script2bundle"
+description = "Generate application bundle (MacOS) from an executable"
+version = "0.1.0"
+dependencies = [
+    "icnsutil"
+]
+
+[project.scripts]
+script2bundle = "script2bundle:main"
+
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.2,<4"]
+
+[project.urls]
+homepage = "https://github.com/andythomas/script2bundle"
