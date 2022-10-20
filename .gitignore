@@ -3,3 +3,4 @@
 *.icns
 *.png
 example
+__pycache__

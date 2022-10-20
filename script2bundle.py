@@ -19,29 +19,46 @@ import time
 
 import icnsutil
 
-def do_the_bundle(): 
+def do_the_bundle():
     # minimal example file
-    example = '#!' + sys.executable + '''
-    # very simple Qt executable to demonstrate script2bundle
+    example = '#!' + sys.executable + '''\n
+# very simple Qt executable to demonstrate script2bundle
+import sys
 
-    import sys
-    try:
-        from PyQt6.QtWidgets import QApplication, QWidget
-    except ImportError:
-        from PyQt5.QtWidgets import QApplication, QWidget
+try:
+    from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QMessageBox
+    from PyQt6.QtCore import QEvent, Qt
+except ImportError:
+    from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QMessageBox
+    from PyQt5.QtCore import QEvent, Qt
 
 
-    def window():
-       app = QApplication(sys.argv)
-       widget = QWidget()
+class MyApplication (QApplication):
+    def event(self, event):
+        if event.type() == QEvent.Type.FileOpen:
+            filename = event.file()
+            msg = QMessageBox()
+            msg.setText(f"Opened by {filename}")
+            msg.exec()
+        return QApplication.event(self, event)
 
-       widget.setWindowTitle("Simple script2bundle example")
-       widget.show()
-       sys.exit(app.exec())
 
-    if __name__ == '__main__':
-       window()
-    '''
+class MyMainWindow (QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle(f"Example")
+
+
+def window():
+    app = MyApplication(sys.argv)
+    ex = MyMainWindow()
+    ex.show()
+    sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    window()
+'''
 
     def is_valid_domain(domain):
         # helper to check the validity of the Uniform Type Identifiers
@@ -228,4 +245,3 @@ def do_the_bundle():
 
 def main():
     do_the_bundle()
-    
