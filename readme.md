@@ -1,6 +1,6 @@
 ## Short description
 
-script2bundle is a command line Python script that bundles an executable, e.g. another (Python) script, into a MacOS application bundle. Compared to py2app, this is a minmal wrapper and allows editable installs (PEP660), but the application bundle will (most likely) only work on the computer it was created.  
+script2bundle is a command line Python script that bundles an executable, e.g. another (Python) script, into a MacOS application bundle. Compared to [py2app](https://py2app.readthedocs.io/en/latest/), this is a minmal wrapper and allows editable installs (PEP660), but the application bundle will only work on the computer it was created.  Script2bundle is of limited use for command line scripts, where [Platypus](https://sveinbjorn.org/platypus) might be a better option. It is intended to be used for GUI (e.g. Qt) executables.  
 
 ## How to use
 Simply run the script without any options to generate an example file. Afterwards, you will find example.app in the same folder.

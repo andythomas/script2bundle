@@ -1,13 +1,18 @@
-# Generate an application bundle (Mac OS) from an executable
-#
-# Initial version 2022 Apr 22 (Andy Thomas)
-# https://github.com/andythomas/script2bundle
-#
-# For more information on application bundle declarations, in particular UTIs, please see:
-#
-# https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_declare/understand_utis_declare.html
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_conc/understand_utis_conc.html
+'''
+Generate an application bundle (Mac OS) from an executable
+
+Run the script without options to generate example.app in the same directory.
+Run `script2bundle -h` for additional options  
+
+Initial version 2022 Apr 22 (Andy Thomas)
+https://github.com/andythomas/script2bundle
+
+For more information on application bundle declarations, in particular UTIs, please see:
+
+https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_declare/understand_utis_declare.html
+https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_conc/understand_utis_conc.html
+'''
 
 import argparse  # cmd line parser
 import os
