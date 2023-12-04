@@ -248,5 +248,5 @@ if __name__ == '__main__':
         print(launch_cmd)
         os.system(launch_cmd)
 
-def main():
+if __name__ == '__main__':
     do_the_bundle()
