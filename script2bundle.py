@@ -17,9 +17,10 @@ https://developer.apple.com/library/archive/documentation/FileManagement/Concept
 import argparse  # cmd line parser
 import os
 import plistlib
+import re
 import shutil  # copy files
-import sys  # find the python3 path
 import string
+import sys  # find the python3 path
 import time
 
 import icnsutil
@@ -140,7 +141,7 @@ if __name__ == '__main__':
     head, tail = os.path.split(app_executable)
     # Strip 'problematic' characters
     move_file = False
-    clean_executable = ''.join(filter(str.isalnum, tail))
+    clean_executable = re.sub(r'[^A-Za-z0-9\.-]+', '', tail)
     if (clean_executable != tail):
         print(
             f'Warning: Stripping characters from filename and duplicating executable ({clean_executable}).')
