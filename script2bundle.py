@@ -244,7 +244,7 @@ if __name__ == '__main__':
     # Launch if requested; sleep required to allow the system to recognize the new app
     if (args.launch):
         time.sleep(2)
-        launch_cmd = 'Open ' + app_filename
+        launch_cmd = 'Open ' + '"' + app_filename + '"'
         print(launch_cmd)
         os.system(launch_cmd)
 
