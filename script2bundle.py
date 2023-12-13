@@ -25,6 +25,7 @@ import time
 
 import icnsutil
 
+
 def do_the_bundle():
     # minimal example file
     example = '#!' + sys.executable + '''\n
@@ -79,7 +80,6 @@ if __name__ == '__main__':
             return False
         return True
 
-
     # use a parser to allow some options
     parser = argparse.ArgumentParser(
         description='Generate an application bundle (Mac OS) from an executable.')
@@ -111,7 +111,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-x', '--extension',
                         type=str,
-                        help='A file extension to be opened by the app.')
+                        nargs='*',
+                        help='File extension(s) to be opened by the app.')
 
     parser.add_argument('--CFBundleTypeRole',
                         type=str,
@@ -166,7 +167,8 @@ if __name__ == '__main__':
     # A bundle identifier is strongly recommended
     app_CFBundleIdentifier = 'org.script2bundle.' + clean_executable
     if not is_valid_domain(app_CFBundleIdentifier):
-        print(f'{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.')
+        print(
+            f'{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.')
         sys.exit(1)
     info_plist.update(CFBundleIdentifier=app_CFBundleIdentifier)
 
@@ -199,7 +201,6 @@ if __name__ == '__main__':
     else:
         shutil.copy(app_executable, macos_dir)
 
-
     # Add the optional icon file if requested
     if (args.CFBundleIconFile != None):
         app_CFBundleIconFile = args.CFBundleIconFile + '.icns'
@@ -214,13 +215,13 @@ if __name__ == '__main__':
 
     # Do the optional connection to a file extension
     if (args.extension != None):
-        UTTypeIdentifier = app_CFBundleIdentifier + '.' + args.extension
+        UTTypeIdentifier = app_CFBundleIdentifier + '.datafile' 
         if not is_valid_domain(UTTypeIdentifier):
             print(
                 f'{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.')
             sys.exit(1)
 
-        file_type = app_CFBundleDisplayName + ' ' + args.extension + ' file'
+        file_type = app_CFBundleDisplayName + ' datafile'
 
         app_CFBundleDocumentTypes = [{'LSItemContentTypes': [UTTypeIdentifier],
                                       'CFBundleTypeName': file_type,
@@ -229,7 +230,7 @@ if __name__ == '__main__':
         info_plist.update(CFBundleDocumentTypes=app_CFBundleDocumentTypes)
 
         app_UTExportedTypeDeclarations = [{'UTTypeIdentifier': UTTypeIdentifier,
-                                           'UTTypeTagSpecification': {'public.filename-extension': [args.extension]},
+                                           'UTTypeTagSpecification': {'public.filename-extension': args.extension},
                                            'UTTypeConformsTo': 'public.data',
                                            'UTTypeDescription': file_type
                                            }]
@@ -248,6 +249,7 @@ if __name__ == '__main__':
         launch_cmd = 'Open ' + '"' + app_filename + '"'
         print(launch_cmd)
         os.system(launch_cmd)
+
 
 if __name__ == '__main__':
     do_the_bundle()
