@@ -2,7 +2,7 @@
 Generate an application bundle (Mac OS) from an executable
 
 Run the script without options to generate example.app in the same directory.
-Run `script2bundle -h` for additional options  
+Run `script2bundle -h` for additional options
 
 Initial version 2022 Apr 22 (Andy Thomas)
 https://github.com/andythomas/script2bundle
@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
     # CFBundleExecutable: Name of the bundle’s executable file
     app_executable = args.executable
-    if (app_executable == None):
+    if app_executable is None:
         app_executable = 'example'
         with open(app_executable, 'w') as examplefile:
             examplefile.write(example)
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     # Strip 'problematic' characters
     move_file = False
     clean_executable = re.sub(r'[^A-Za-z0-9\.-]+', '', tail)
-    if (clean_executable != tail):
+    if clean_executable != tail:
         print(
             f'Warning: Stripping characters from filename and duplicating executable ({clean_executable}).')
         clean_filename = os.path.join(head, clean_executable)
@@ -156,11 +156,11 @@ if __name__ == '__main__':
 
     # The bundle needs a filename and a name to be displayed
     app_filename = args.filename
-    if (app_filename == None):
+    if app_filename is None:
         app_filename = clean_executable
     app_CFBundleDisplayName = app_filename
     app_filename = app_filename + '.app'
-    if (args.CFBundleDisplayName != None):
+    if args.CFBundleDisplayName is not None:
         app_CFBundleDisplayName = args.CFBundleDisplayName
     info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
 
@@ -176,11 +176,11 @@ if __name__ == '__main__':
     info_plist.update(CFBundlePackageType="APPL")
 
     # Determine the destination of the .app file
-    if (args.destination == 'executable'):
+    if args.destination == 'executable':
         app_filename = os.path.join(head, app_filename)
-    elif (args.destination == 'system'):
+    elif args.destination == 'system':
         app_filename = os.path.join('/Applications', app_filename)
-    elif (args.destination == 'user'):
+    elif args.destination == 'user':
         app_filename = os.path.join(os.path.expanduser(
             "~"), 'Applications', app_filename)
 
@@ -202,7 +202,7 @@ if __name__ == '__main__':
         shutil.copy(app_executable, macos_dir)
 
     # Add the optional icon file if requested
-    if (args.CFBundleIconFile != None):
+    if args.CFBundleIconFile is not None:
         app_CFBundleIconFile = args.CFBundleIconFile + '.icns'
         # generate the proper filetype from a png
         icon_img = icnsutil.IcnsFile()
@@ -214,8 +214,8 @@ if __name__ == '__main__':
         info_plist.update(CFBundleIconFile=tail)
 
     # Do the optional connection to a file extension
-    if (args.extension != None):
-        UTTypeIdentifier = app_CFBundleIdentifier + '.datafile' 
+    if args.extension is not None:
+        UTTypeIdentifier = app_CFBundleIdentifier + '.datafile'
         if not is_valid_domain(UTTypeIdentifier):
             print(
                 f'{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.')
@@ -244,7 +244,7 @@ if __name__ == '__main__':
         plistlib.dump(info_plist, infofile)
 
     # Launch if requested; sleep required to allow the system to recognize the new app
-    if (args.launch):
+    if args.launch:
         time.sleep(2)
         launch_cmd = 'Open ' + '"' + app_filename + '"'
         print(launch_cmd)
