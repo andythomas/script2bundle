@@ -26,46 +26,7 @@ import time
 import icnsutil
 
 
-def do_the_bundle():
-    # minimal example file
-    example = '#!' + sys.executable + '''\n
-# very simple Qt executable to demonstrate script2bundle
-import sys
-
-try:
-    from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QMessageBox
-    from PyQt6.QtCore import QEvent, Qt
-except ImportError:
-    from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QMessageBox
-    from PyQt5.QtCore import QEvent, Qt
-
-
-class MyApplication (QApplication):
-    def event(self, event):
-        if event.type() == QEvent.Type.FileOpen:
-            filename = event.file()
-            msg = QMessageBox()
-            msg.setText(f"Opened by {filename}")
-            msg.exec()
-        return QApplication.event(self, event)
-
-
-class MyMainWindow (QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle(f"Example")
-
-
-def window():
-    app = MyApplication(sys.argv)
-    ex = MyMainWindow()
-    ex.show()
-    sys.exit(app.exec())
-
-
-if __name__ == '__main__':
-    window()
-'''
+def do_the_bundle(app_executable, app_filename, app_CFBundleDisplayName):
 
     def is_valid_domain(domain):
         # helper to check the validity of the Uniform Type Identifiers
@@ -80,65 +41,8 @@ if __name__ == '__main__':
             return False
         return True
 
-    # use a parser to allow some options
-    parser = argparse.ArgumentParser(
-        description='Generate an application bundle (Mac OS) from an executable.')
-
-    # The options:
-    parser.add_argument('-e', '--executable',
-                        type=str,
-                        help='The filename of the (existing) executable file to be bundled.')
-
-    parser.add_argument('-f', '--filename',
-                        type=str,
-                        help='The filename of the app to be generated (without .app)')
-
-    parser.add_argument('-i', '--CFBundleIconFile',
-                        type=str,
-                        help='The (existing) png to be used as an icon file.')
-
-    parser.add_argument('-d', '--destination',
-                        type=str,
-                        choices={'user', 'system', 'executable'},
-                        default='executable',
-                        const='executable',
-                        nargs='?',
-                        help='The destination of the .app file (default: %(default)s).')
-
-    parser.add_argument('--launch',
-                        action='store_true',
-                        help='Launch the app to register properly.')
-
-    parser.add_argument('-x', '--extension',
-                        type=str,
-                        nargs='*',
-                        help='File extension(s) to be opened by the app.')
-
-    parser.add_argument('--CFBundleTypeRole',
-                        type=str,
-                        choices={'Editor', 'Viewer', 'Shell', 'None'},
-                        default='Viewer',
-                        const='Viewer',
-                        nargs='?',
-                        help='The app’s role with respect to the file extension. (default: %(default)s).')
-
-    parser.add_argument('--CFBundleDisplayName',
-                        type=str,
-                        help='Specifies the display name of the bundle, visible to users and used by Siri.')
-
-    # initiate the parsing
-    args = parser.parse_args()
-
-    # First, generate the keys and overwrite if explicit key is given
-    # app_ precedes most variables to not confuse variables, arguments and plist keys
 
     # CFBundleExecutable: Name of the bundle’s executable file
-    app_executable = args.executable
-    if app_executable is None:
-        app_executable = 'example'
-        with open(app_executable, 'w') as examplefile:
-            examplefile.write(example)
-        os.chmod(app_executable, 0o755)
     head, tail = os.path.split(app_executable)
     # Strip 'problematic' characters
     move_file = False
@@ -150,18 +54,16 @@ if __name__ == '__main__':
         shutil.copy2(app_executable, clean_filename)
         app_executable = clean_filename
         move_file = True
-
     # start the plist file with the name of the executable
     info_plist = dict(CFBundleExecutable=clean_executable)
 
     # The bundle needs a filename and a name to be displayed
-    app_filename = args.filename
     if app_filename is None:
         app_filename = clean_executable
-    app_CFBundleDisplayName = app_filename
     app_filename = app_filename + '.app'
-    if args.CFBundleDisplayName is not None:
-        app_CFBundleDisplayName = args.CFBundleDisplayName
+
+    if app_CFBundleDisplayName is None:
+        app_CFBundleDisplayName = app_filename
     info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
 
     # A bundle identifier is strongly recommended
@@ -252,4 +154,100 @@ if __name__ == '__main__':
 
 
 if __name__ == '__main__':
-    do_the_bundle()
+    # minimal example file
+    example = '#!' + sys.executable + '''\n
+# very simple Qt executable to demonstrate script2bundle
+import sys
+
+try:
+    from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QMessageBox
+    from PyQt6.QtCore import QEvent, Qt
+except ImportError:
+    from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QMessageBox
+    from PyQt5.QtCore import QEvent, Qt
+
+
+class MyApplication (QApplication):
+    def event(self, event):
+        if event.type() == QEvent.Type.FileOpen:
+            filename = event.file()
+            msg = QMessageBox()
+            msg.setText(f"Opened by {filename}")
+            msg.exec()
+        return QApplication.event(self, event)
+
+
+class MyMainWindow (QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle(f"Example")
+
+
+def window():
+    app = MyApplication(sys.argv)
+    ex = MyMainWindow()
+    ex.show()
+    sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    window()
+'''
+
+    # use a parser to allow some options
+    parser = argparse.ArgumentParser(
+        description='Generate an application bundle (Mac OS) from an executable.')
+
+    # The options:
+    parser.add_argument('-e', '--executable',
+                        type=str,
+                        help='The filename of the (existing) executable file to be bundled.')
+
+    parser.add_argument('-f', '--filename',
+                        type=str,
+                        help='The filename of the app to be generated (without .app)')
+
+    parser.add_argument('-i', '--CFBundleIconFile',
+                        type=str,
+                        help='The (existing) png to be used as an icon file.')
+
+    parser.add_argument('-d', '--destination',
+                        type=str,
+                        choices={'user', 'system', 'executable'},
+                        default='executable',
+                        const='executable',
+                        nargs='?',
+                        help='The destination of the .app file (default: %(default)s).')
+
+    parser.add_argument('--launch',
+                        action='store_true',
+                        help='Launch the app to register properly.')
+
+    parser.add_argument('-x', '--extension',
+                        type=str,
+                        nargs='*',
+                        help='File extension(s) to be opened by the app.')
+
+    parser.add_argument('--CFBundleTypeRole',
+                        type=str,
+                        choices={'Editor', 'Viewer', 'Shell', 'None'},
+                        default='Viewer',
+                        const='Viewer',
+                        nargs='?',
+                        help='The app’s role with respect to the file extension. (default: %(default)s).')
+
+    parser.add_argument('--CFBundleDisplayName',
+                        type=str,
+                        help='Specifies the display name of the bundle, visible to users and used by Siri.')
+
+    # initiate the parsing
+    args = parser.parse_args()
+
+    app_executable = args.executable
+    if app_executable is None:
+        app_executable = 'example'
+        with open(app_executable, 'w') as examplefile:
+            examplefile.write(example)
+        os.chmod(app_executable, 0o755)
+
+    do_the_bundle(app_executable, args.filename, args.CFBundleDisplayName)
