@@ -26,7 +26,14 @@ import time
 import icnsutil
 
 
-def do_the_bundle(app_executable, app_filename, app_CFBundleDisplayName):
+def do_the_bundle(app_executable,
+                  app_filename=None,
+                  app_CFBundleDisplayName=None,
+                  app_destination='executable',
+                  app_CFBundleIconFile=None,
+                  app_extension=None,
+                  app_CFBundleTypeRole='Viewer',
+                  app_launch=False):
 
     def is_valid_domain(domain):
         # helper to check the validity of the Uniform Type Identifiers
@@ -40,7 +47,6 @@ def do_the_bundle(app_executable, app_filename, app_CFBundleDisplayName):
         if '..' in domain:
             return False
         return True
-
 
     # CFBundleExecutable: Name of the bundle’s executable file
     head, tail = os.path.split(app_executable)
@@ -78,11 +84,11 @@ def do_the_bundle(app_executable, app_filename, app_CFBundleDisplayName):
     info_plist.update(CFBundlePackageType="APPL")
 
     # Determine the destination of the .app file
-    if args.destination == 'executable':
+    if app_destination == 'executable':
         app_filename = os.path.join(head, app_filename)
-    elif args.destination == 'system':
+    elif app_destination == 'system':
         app_filename = os.path.join('/Applications', app_filename)
-    elif args.destination == 'user':
+    elif app_destination == 'user':
         app_filename = os.path.join(os.path.expanduser(
             "~"), 'Applications', app_filename)
 
@@ -104,19 +110,19 @@ def do_the_bundle(app_executable, app_filename, app_CFBundleDisplayName):
         shutil.copy(app_executable, macos_dir)
 
     # Add the optional icon file if requested
-    if args.CFBundleIconFile is not None:
-        app_CFBundleIconFile = args.CFBundleIconFile + '.icns'
+    if app_CFBundleIconFile is not None:
+        iconsfile = app_CFBundleIconFile + '.icns'
         # generate the proper filetype from a png
         icon_img = icnsutil.IcnsFile()
-        icon_img.add_media(file=args.CFBundleIconFile)
-        icon_img.write(app_CFBundleIconFile)
-        head, tail = os.path.split(app_CFBundleIconFile)
+        icon_img.add_media(file=app_CFBundleIconFile)
+        icon_img.write(iconsfile)
+        head, tail = os.path.split(iconsfile)
         # copy the icon file in the correct place and update plist
-        shutil.copy(app_CFBundleIconFile, resources_dir)
+        shutil.copy(iconsfile, resources_dir)
         info_plist.update(CFBundleIconFile=tail)
 
     # Do the optional connection to a file extension
-    if args.extension is not None:
+    if app_extension is not None:
         UTTypeIdentifier = app_CFBundleIdentifier + '.datafile'
         if not is_valid_domain(UTTypeIdentifier):
             print(
@@ -127,12 +133,12 @@ def do_the_bundle(app_executable, app_filename, app_CFBundleDisplayName):
 
         app_CFBundleDocumentTypes = [{'LSItemContentTypes': [UTTypeIdentifier],
                                       'CFBundleTypeName': file_type,
-                                      'CFBundleTypeRole': args.CFBundleTypeRole}]
+                                      'CFBundleTypeRole': app_CFBundleTypeRole}]
 
         info_plist.update(CFBundleDocumentTypes=app_CFBundleDocumentTypes)
 
         app_UTExportedTypeDeclarations = [{'UTTypeIdentifier': UTTypeIdentifier,
-                                           'UTTypeTagSpecification': {'public.filename-extension': args.extension},
+                                           'UTTypeTagSpecification': {'public.filename-extension': app_extension},
                                            'UTTypeConformsTo': 'public.data',
                                            'UTTypeDescription': file_type
                                            }]
@@ -146,7 +152,7 @@ def do_the_bundle(app_executable, app_filename, app_CFBundleDisplayName):
         plistlib.dump(info_plist, infofile)
 
     # Launch if requested; sleep required to allow the system to recognize the new app
-    if args.launch:
+    if app_launch:
         time.sleep(2)
         launch_cmd = 'Open ' + '"' + app_filename + '"'
         print(launch_cmd)
@@ -250,4 +256,11 @@ if __name__ == '__main__':
             examplefile.write(example)
         os.chmod(app_executable, 0o755)
 
-    do_the_bundle(app_executable, args.filename, args.CFBundleDisplayName)
+    do_the_bundle(app_executable,
+                  app_filename=args.filename,
+                  app_CFBundleDisplayName=args.CFBundleDisplayName,
+                  app_destination=args.destination,
+                  app_CFBundleIconFile=args.CFBundleIconFile,
+                  app_extension=args.extension,
+                  app_CFBundleTypeRole=args.CFBundleTypeRole,
+                  app_launch=args.launch)
