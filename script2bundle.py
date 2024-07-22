@@ -33,7 +33,8 @@ def do_the_bundle(app_executable,
                   app_CFBundleIconFile=None,
                   app_extension=None,
                   app_CFBundleTypeRole='Viewer',
-                  app_launch=False):
+                  app_launch=False,
+                  app_terminal=False):
 
     def is_valid_domain(domain):
         # helper to check the validity of the Uniform Type Identifiers
@@ -48,10 +49,26 @@ def do_the_bundle(app_executable,
             return False
         return True
 
+    move_file = False
+
+    if app_terminal:
+        # write a new script to be bundled
+        terminal_script = "#!/bin/bash\n/usr/bin/open '" + os.path.abspath(app_executable) + "' -a Terminal"
+        terminal_filename = 'terminallauncher'
+        if os.path.isfile(terminal_filename):
+            print(f'{terminal_filename} already exists.')
+            exit(1)
+        with open(terminal_filename, 'w') as terminal_file:
+            terminal_file.write(terminal_script)
+        os.chmod(terminal_filename, 0o755)
+        if app_filename is None:
+            app_filename = app_executable
+        app_executable = terminal_filename
+        move_file = True
+
     # CFBundleExecutable: Name of the bundle’s executable file
     head, tail = os.path.split(app_executable)
     # Strip 'problematic' characters
-    move_file = False
     clean_executable = re.sub(r'[^A-Za-z0-9\.-]+', '', tail)
     if clean_executable != tail:
         print(
@@ -246,6 +263,10 @@ if __name__ == '__main__':
                         type=str,
                         help='Specifies the display name of the bundle, visible to users and used by Siri.')
 
+    parser.add_argument('--terminal',
+                        action='store_true',
+                        help='Launch the app via a terminal.')
+
     # initiate the parsing
     args = parser.parse_args()
 
@@ -263,4 +284,5 @@ if __name__ == '__main__':
                   app_CFBundleIconFile=args.CFBundleIconFile,
                   app_extension=args.extension,
                   app_CFBundleTypeRole=args.CFBundleTypeRole,
-                  app_launch=args.launch)
+                  app_launch=args.launch,
+                  app_terminal=args.terminal)
