@@ -288,9 +288,9 @@ if __name__ == '__main__':
                         type=str,
                         help='Specifies the display name of the bundle, visible to users and used by Siri.')
 
-    parser.add_argument('--terminal',
-                        action='store_true',
-                        help='Always launch the app via a terminal.')
+    parser.add_argument(
+        "--terminal", action="store_true", help="Always launch the app via a terminal."
+    )
 
     # initiate the parsing
     args = parser.parse_args()
