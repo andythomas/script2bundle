@@ -287,5 +287,6 @@ if __name__ == '__main__':
                   app_launch=args.launch,
                   app_terminal=args.terminal)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
