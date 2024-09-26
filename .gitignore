@@ -4,3 +4,4 @@
 *.png
 example
 __pycache__
+dist
