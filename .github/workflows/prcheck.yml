@@ -1,0 +1,98 @@
+---
+name: PR-check
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+    branches:
+      - main
+
+jobs:
+  PR-Title-and-ruff:
+    if: >
+      startsWith(github.head_ref, 'ruff-patches') == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: check the pull request (branch) out
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: determine last commit to main for comparison
+        run: |
+          git rev-parse origin/main
+          echo "MAIN_LAST_COMMIT=$(git rev-parse origin/main)" >> "${GITHUB_ENV}"
+      - name: Examine the pull request title
+        id: titlecheck
+        continue-on-error: true
+        run: >
+          grep -qP --
+          '^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)((.+))?:\s.+'
+          <<< '${{ github.event.pull_request.title }}'
+      - name: Install code formatting tools ruff and darker
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ruff
+          python -m pip install darker
+      - name: Check code with ruff
+        id: ruffcheck
+        run: >
+          ruff check --exit-zero .
+      - name: Apply automatic fixes with ruff
+        id: ruff
+        continue-on-error: true
+        run: >
+          ruff check --fix-only .
+      - name: Display all changes by darker
+        id: changed
+        continue-on-error: true
+        run: >
+          darker -L "ruff check" . --check --diff -r ${{ env.MAIN_LAST_COMMIT }}
+      - name: Perform darker changes
+        id: format
+        if: steps.changed.outcome == 'failure'
+        run: >
+          darker -L "ruff check" . -r ${{ env.MAIN_LAST_COMMIT }}
+      - name: Create pull request
+        if: >
+          steps.ruff.outcome == 'failure' ||
+          steps.changed.outcome == 'failure'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: ruff action fixes
+          title: Fixes by PR-check action
+          body: This is an auto-generated PR with fixes by ruff.
+          labels: ruff, automated pr
+          branch: "ruff-patches/${{ github.head_ref }}"
+          base: ${{ github.head_ref }}
+      - name: Fail if ruff made changes and print explanantion
+        if: >
+          steps.ruff.outcome == 'failure' ||
+          steps.changed.outcome == 'failure'
+        run: |
+          echo "## Code formatting Error" >> $GITHUB_STEP_SUMMARY
+          echo "Some code needs polishing. A pull request with" >> $GITHUB_STEP_SUMMARY
+          echo "suggestions will be made by a bot." >> $GITHUB_STEP_SUMMARY
+          echo "ERROR1=Code needs polishing, bot created pull request." >> $GITHUB_ENV
+      - name: Fail if title formatting is off and print explanation
+        if: steps.titlecheck.outcome == 'failure'
+        run: |
+          echo "## PR title formatting error!" >> $GITHUB_STEP_SUMMARY
+          echo "The pull request title needs 'semantic commit message' formatting" >> $GITHUB_STEP_SUMMARY
+          echo "Please see e.g. https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716" >> $GITHUB_STEP_SUMMARY
+          echo "ERROR2=Use semantic commit message formatting." >> $GITHUB_ENV
+      - name: Failure exit
+        if: >
+          steps.ruff.outcome == 'failure' ||
+          steps.titlecheck.outcome == 'failure' ||
+          steps.changed.outcome == 'failure'
+        run: |
+          echo ${{ env.ERROR1 }}
+          echo ${{ env.ERROR2 }}
+          echo "Please click the left Summary tab for more information."
+          exit 1
