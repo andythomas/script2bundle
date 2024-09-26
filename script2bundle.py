@@ -175,8 +175,8 @@ def do_the_bundle(app_executable,
         print(launch_cmd)
         os.system(launch_cmd)
 
+def main():
 
-if __name__ == '__main__':
     # minimal example file
     example = '#!' + sys.executable + '''\n
 # very simple Qt executable to demonstrate script2bundle
@@ -286,3 +286,6 @@ if __name__ == '__main__':
                   app_CFBundleTypeRole=args.CFBundleTypeRole,
                   app_launch=args.launch,
                   app_terminal=args.terminal)
+
+if __name__ == '__main__':
+    main()
