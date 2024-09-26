@@ -1,5 +1,5 @@
-'''
-Generate an application bundle (Mac OS) from an executable
+"""
+Generate an application bundle (Mac OS) from an executable.
 
 Run the script without options to generate example.app in the same directory.
 Run `script2bundle -h` for additional options
@@ -12,7 +12,7 @@ For more information on application bundle declarations, in particular UTIs, ple
 https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_declare/understand_utis_declare.html
 https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_conc/understand_utis_conc.html
-'''
+"""
 
 import argparse  # cmd line parser
 import os
@@ -35,9 +35,34 @@ def do_the_bundle(app_executable,
                   app_CFBundleTypeRole='Viewer',
                   app_launch=False,
                   app_terminal=False):
+    """
+    Create the execution bundle from an executable.
+
+    Parameters
+    ----------
+    app_executable : str
+        The filename of the (existing) executable file to be bundled.
+    app_filename : str or None, default : None
+        The filename of the app to be generated (without .app). Defaults to app_executable + '.app'
+    app_CFBundleDisplayName : str or None, default : None
+        Specifies the display name of the bundle, visible to users and used by Siri.
+    app_destination : str, default = 'executable'
+        The destination of the .app file. Can be 'user' (~/Applications), 'system' (/Application) or
+        'executable' (same as app_executable).
+    app_CFBundleIconFile : str or None, default : None
+        The (existing) png to be used as an icon file.
+    app_extension : str or None, default : None
+        File extension(s) to be opened by the app.
+    app_CFBundleTypeRole : str, default = 'viewer'
+        The app’s role with respect to the file extension. Can be 'Editor', 'Viewer', 'Shell' or 'None'
+    app_launch : bool, default : False
+        Launch the app to register properly.
+    app_terminal : bool, default : False
+        Always launch the app via a terminal.
+    """
 
     def is_valid_domain(domain):
-        # helper to check the validity of the Uniform Type Identifiers
+        """Check the validity of the Uniform Type Identifiers."""
         rfc1035_chars = string.ascii_lowercase + string.digits + '-.'
         if not all(char in rfc1035_chars for char in domain.lower()):
             return False
@@ -52,7 +77,7 @@ def do_the_bundle(app_executable,
     move_file = False
 
     if app_terminal:
-        # write a new script to be bundled
+        """Write a new script to be bundled."""
         terminal_script = "#!/bin/bash\n/usr/bin/open '" + os.path.abspath(app_executable) + "' -a Terminal"
         terminal_filename = 'terminallauncher'
         if os.path.isfile(terminal_filename):
@@ -263,9 +288,9 @@ if __name__ == '__main__':
                         type=str,
                         help='Specifies the display name of the bundle, visible to users and used by Siri.')
 
-    parser.add_argument('--terminal',
-                        action='store_true',
-                        help='Launch the app via a terminal.')
+    parser.add_argument(
+        "--terminal", action="store_true", help="Always launch the app via a terminal."
+    )
 
     # initiate the parsing
     args = parser.parse_args()
