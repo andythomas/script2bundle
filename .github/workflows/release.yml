@@ -23,9 +23,6 @@ jobs:
           flit build
           git status
 
-      - name: Enable GitHub Actions Debug Logging
-        run: echo "ACTIONS_RUNNER_DEBUG=true" >> $GITHUB_ENV
-
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@v9.8.8
