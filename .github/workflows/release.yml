@@ -16,10 +16,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Debug the error
-        continue-on-error: true
-        run: |
-          sudo apt-get update && sudo apt-get install -y python3 git
-          pip install flit
-          flit build
-          git status
+      - name: Python Semantic Release
+        id: release
+        env:
+          PYTHON_SEMANTIC_RELEASE_LOG_LEVEL: DEBUG
+        uses: python-semantic-release/python-semantic-release@v9.8.8
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish package distributions to GitHub Releases
+        uses: python-semantic-release/upload-to-gh-release@v9.8.8
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}
