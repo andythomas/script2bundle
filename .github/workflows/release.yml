@@ -23,7 +23,7 @@ jobs:
         id: release
         uses: python-semantic-release/python-semantic-release@v9.8.8
         with:
-          log-level: debug
+          root_options: "-vv"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish package distributions to GitHub Releases
