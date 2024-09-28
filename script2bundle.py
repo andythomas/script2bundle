@@ -203,19 +203,18 @@ def do_the_bundle(app_executable,
 def main():
 
     # minimal example file
-    example = '#!' + sys.executable + '''\n
+    example = (
+        "#!"
+        + sys.executable
+        + """\n
 # very simple Qt executable to demonstrate script2bundle
 import sys
 
-try:
-    from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QMessageBox
-    from PyQt6.QtCore import QEvent, Qt
-except ImportError:
-    from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QMessageBox
-    from PyQt5.QtCore import QEvent, Qt
+from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt6.QtCore import QEvent
 
 
-class MyApplication (QApplication):
+class MyApplication(QApplication):
     def event(self, event):
         if event.type() == QEvent.Type.FileOpen:
             filename = event.file()
@@ -225,10 +224,10 @@ class MyApplication (QApplication):
         return QApplication.event(self, event)
 
 
-class MyMainWindow (QMainWindow):
+class MyMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"Example")
+        self.setWindowTitle("Example")
 
 
 def window():
@@ -238,9 +237,10 @@ def window():
     sys.exit(app.exec())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     window()
-'''
+"""
+    )
 
     # use a parser to allow some options
     parser = argparse.ArgumentParser(
@@ -297,6 +297,12 @@ if __name__ == '__main__':
 
     app_executable = args.executable
     if app_executable is None:
+        try:
+            from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox  # noqa
+            from PyQt6.QtCore import QEvent  # noqa
+        except ImportError:
+            print("Please install PyQt6 to run the example. Exiting.")
+            sys.exit(1)
         app_executable = 'example'
         with open(app_executable, 'w') as examplefile:
             examplefile.write(example)
