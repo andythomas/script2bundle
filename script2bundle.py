@@ -212,7 +212,8 @@ import sys
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt6.QtCore import QEvent
-
+from AppKit import NSApplication
+from Foundation import NSBundle
 
 class MyApplication(QApplication):
     def event(self, event):
@@ -223,22 +224,32 @@ class MyApplication(QApplication):
             msg.exec()
         return QApplication.event(self, event)
 
+def set_correct_appname(name):
+    # Correct the title
+    bundle = NSBundle.mainBundle()
+    if bundle:
+        info_dict = bundle.localizedInfoDictionary() or bundle.infoDictionary()
+        info_dict["CFBundleName"] = name
+    # Correct the menu
+    app = NSApplication.sharedApplication()
+    mainMenu = app.mainMenu()
+    # Get left-most menu with app-specific items
+    app_menu = mainMenu.itemAtIndex_(0).submenu()
+    for i in range(app_menu.numberOfItems()):
+        item = app_menu.itemAtIndex_(i)
+        item.setTitle_(item.title().replace("Python", name))
 
-class MyMainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Example")
-
-
-def window():
+def main():
     app = MyApplication(sys.argv)
-    ex = MyMainWindow()
+    set_correct_appname("Example")
+    ex = QMainWindow()
+    ex.setWindowTitle("Example")
     ex.show()
     sys.exit(app.exec())
 
 
 if __name__ == "__main__":
-    window()
+    main()
 """
     )
 
@@ -300,8 +311,10 @@ if __name__ == "__main__":
         try:
             from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox  # noqa
             from PyQt6.QtCore import QEvent  # noqa
+            from AppKit import NSApplication  # noqa
+            from Foundation import NSBundle  # noqa
         except ImportError:
-            print("Please install PyQt6 to run the example. Exiting.")
+            print("Please install 'PyQt6' and 'pyobjc' to run the example. Exiting.")
             sys.exit(1)
         app_executable = 'example'
         with open(app_executable, 'w') as examplefile:
