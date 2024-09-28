@@ -294,8 +294,8 @@ if __name__ == "__main__":
     app_executable = args.executable
     if app_executable is None:
         try:
-            from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
-            from PyQt6.QtCore import QEvent
+            from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox # noqa
+            from PyQt6.QtCore import QEvent # noqa
         except ImportError:
             print("Please install PyQt6 to run the example. Exiting.")
             sys.exit(1)
