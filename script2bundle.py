@@ -1,4 +1,3 @@
-#!python3
 """
 Generate an application bundle (Mac OS) from an executable.
 
@@ -205,6 +204,7 @@ def main():
 
     # minimal example file
     example = '#!' + sys.executable + '''\n
+# very simple Qt executable to demonstrate script2bundle
 import sys
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
@@ -293,6 +293,12 @@ if __name__ == "__main__":
 
     app_executable = args.executable
     if app_executable is None:
+        try:
+            from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
+            from PyQt6.QtCore import QEvent
+        except ImportError:
+            print("Please install PyQt6 to run the example. Exiting.")
+            sys.exit(1)
         app_executable = 'example'
         with open(app_executable, 'w') as examplefile:
             examplefile.write(example)
