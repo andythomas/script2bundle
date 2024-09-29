@@ -16,13 +16,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run flit first
-        continue-on-error: true
-        run: |
-          pip install flit
-          flit build
-          git status
-
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@v9.8.8

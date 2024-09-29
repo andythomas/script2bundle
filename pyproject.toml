@@ -2,9 +2,7 @@
 name = "script2bundle"
 description = "Generate application bundle (MacOS) from an executable"
 version = "0.1.0"
-dependencies = [
-    "icnsutil"
-]
+dependencies = ["icnsutil"]
 
 [project.scripts]
 script2bundle = "script2bundle:main"
@@ -26,10 +24,9 @@ extend-select = ['D'] # also check docstrings
 convention = "numpy" # Accepts: "google", "numpy", or "pep257".
 
 [tool.semantic_release]
-version_toml = [
-    "pyproject.toml:project.version",
-]
+version_toml = ["pyproject.toml:project.version"]
 branch = "main"
+build_command = "pip install flit && flit build --no-use-vcs"
 
 [tool.semantic_release.changelog]
 exclude_commit_patterns = [
