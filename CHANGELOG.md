@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.2.0 (2024-09-29)
+
+### Feature
+
+* feat: set app name in app menu (#15) *by Andy Thomas* ([`70d4ad2`](https://github.com/andythomas/script2bundle/commit/70d4ad20376f6c1bdb429e768677f8fe7f305fe4))
+
+### Unknown
+
+* Merge branch &#39;main&#39; of https://github.com/andythomas/script2bundle *by Andy Thomas* ([`1d745fc`](https://github.com/andythomas/script2bundle/commit/1d745fcac9edce2ad562b9363c5c2c5439b1859d))
+
 ## v0.1.0 (2024-09-27)
 
 ### Documentation
