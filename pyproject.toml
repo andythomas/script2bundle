@@ -1,6 +1,7 @@
 [project]
 name = "script2bundle"
-description = "Generate application bundle (MacOS) from an executable"
+description = "Generate an application bundle (MacOS) from an executable"
+readme = "readme.md"
 version = "0.2.0"
 dependencies = ["icnsutil"]
 
