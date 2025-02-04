@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.3.0 (2025-02-04)
+
+### Feature
+
+* feat(pyproject.toml): include readme position (#18) *by Andy Thomas* ([`81c11b8`](https://github.com/andythomas/script2bundle/commit/81c11b87b54298b152ff53764e9607ec6ab26892))
+
+### Fix
+
+* fix: remove erroneous files (#17) *by Andy Thomas* ([`0fc5f0f`](https://github.com/andythomas/script2bundle/commit/0fc5f0f194b0705c8fef82d5810912e33079d43a))
+
 ## v0.2.0 (2024-09-29)
 
 ### Feature
