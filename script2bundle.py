@@ -86,9 +86,7 @@ def do_the_bundle(
     if app_terminal:
         """Write a new script to be bundled."""
         terminal_script = (
-            "#!/bin/bash\n/usr/bin/open '"
-            + os.path.abspath(app_executable)
-            + "' -a Terminal"
+            "#!/bin/bash\n/usr/bin/open '" + os.path.abspath(app_executable) + "' -a Terminal"
         )
         terminal_filename = "terminallauncher"
         if os.path.isfile(terminal_filename):
@@ -129,9 +127,7 @@ def do_the_bundle(
     # A bundle identifier is strongly recommended
     app_CFBundleIdentifier = "org.script2bundle." + clean_executable
     if not is_valid_domain(app_CFBundleIdentifier):
-        print(
-            f"{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035."
-        )
+        print(f"{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.")
         sys.exit(1)
     info_plist.update(CFBundleIdentifier=app_CFBundleIdentifier)
 
@@ -144,9 +140,7 @@ def do_the_bundle(
     elif app_destination == "system":
         app_filename = os.path.join("/Applications", app_filename)
     elif app_destination == "user":
-        app_filename = os.path.join(
-            os.path.expanduser("~"), "Applications", app_filename
-        )
+        app_filename = os.path.join(os.path.expanduser("~"), "Applications", app_filename)
 
     # Delete possible old version
     if os.path.isdir(app_filename):
@@ -181,9 +175,7 @@ def do_the_bundle(
     if app_extension is not None:
         UTTypeIdentifier = app_CFBundleIdentifier + ".datafile"
         if not is_valid_domain(UTTypeIdentifier):
-            print(
-                f"{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035."
-            )
+            print(f"{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.")
             sys.exit(1)
 
         file_type = app_CFBundleDisplayName + " datafile"
