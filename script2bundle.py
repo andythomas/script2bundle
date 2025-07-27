@@ -1,13 +1,14 @@
 """
 Generate an application bundle (Mac OS) from an executable.
 
-Run the script without options to generate example.app in the same directory.
-Run `script2bundle -h` for additional options
+Run the script without options to generate example.app in the
+same directory. Run `script2bundle -h` for additional options
 
 Initial version 2022 Apr 22 (Andy Thomas)
 https://github.com/andythomas/script2bundle
 
-For more information on application bundle declarations, in particular UTIs, please see:
+For more information on application bundle declarations, in particular
+UTIs, please see:
 
 https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_declare/understand_utis_declare.html
 https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
@@ -45,18 +46,22 @@ def do_the_bundle(
     app_executable : str
         The filename of the (existing) executable file to be bundled.
     app_filename : str or None, default : None
-        The filename of the app to be generated (without .app). Defaults to app_executable + '.app'
+        The filename of the app to be generated (without .app). Defaults
+        to app_executable + '.app'
     app_CFBundleDisplayName : str or None, default : None
-        Specifies the display name of the bundle, visible to users and used by Siri.
+        Specifies the display name of the bundle, visible to users and
+        used by Siri.
     app_destination : str, default = 'executable'
-        The destination of the .app file. Can be 'user' (~/Applications), 'system' (/Application) or
-        'executable' (same as app_executable).
+        The destination of the .app file. Can be 'user'
+        (~/Applications), 'system' (/Application) or 'executable'
+        (same as app_executable).
     app_CFBundleIconFile : str or None, default : None
         The (existing) png to be used as an icon file.
     app_extension : str or None, default : None
         File extension(s) to be opened by the app.
     app_CFBundleTypeRole : str, default = 'viewer'
-        The app’s role with respect to the file extension. Can be 'Editor', 'Viewer', 'Shell' or 'None'
+        The app’s role with respect to the file extension. Can be
+        'Editor', 'Viewer', 'Shell' or 'None'
     app_launch : bool, default : False
         Launch the app to register properly.
     app_terminal : bool, default : False
@@ -81,9 +86,7 @@ def do_the_bundle(
     if app_terminal:
         """Write a new script to be bundled."""
         terminal_script = (
-            "#!/bin/bash\n/usr/bin/open '"
-            + os.path.abspath(app_executable)
-            + "' -a Terminal"
+            "#!/bin/bash\n/usr/bin/open '" + os.path.abspath(app_executable) + "' -a Terminal"
         )
         terminal_filename = "terminallauncher"
         if os.path.isfile(terminal_filename):
@@ -124,9 +127,7 @@ def do_the_bundle(
     # A bundle identifier is strongly recommended
     app_CFBundleIdentifier = "org.script2bundle." + clean_executable
     if not is_valid_domain(app_CFBundleIdentifier):
-        print(
-            f"{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035."
-        )
+        print(f"{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.")
         sys.exit(1)
     info_plist.update(CFBundleIdentifier=app_CFBundleIdentifier)
 
@@ -139,9 +140,7 @@ def do_the_bundle(
     elif app_destination == "system":
         app_filename = os.path.join("/Applications", app_filename)
     elif app_destination == "user":
-        app_filename = os.path.join(
-            os.path.expanduser("~"), "Applications", app_filename
-        )
+        app_filename = os.path.join(os.path.expanduser("~"), "Applications", app_filename)
 
     # Delete possible old version
     if os.path.isdir(app_filename):
@@ -176,9 +175,7 @@ def do_the_bundle(
     if app_extension is not None:
         UTTypeIdentifier = app_CFBundleIdentifier + ".datafile"
         if not is_valid_domain(UTTypeIdentifier):
-            print(
-                f"{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035."
-            )
+            print(f"{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.")
             sys.exit(1)
 
         file_type = app_CFBundleDisplayName + " datafile"
@@ -209,7 +206,8 @@ def do_the_bundle(
     with open(info_filename, "wb") as infofile:
         plistlib.dump(info_plist, infofile)
 
-    # Launch if requested; sleep required to allow the system to recognize the new app
+    # Launch if requested;
+    # sleep required to allow the system to recognize the new app
     if app_launch:
         time.sleep(2)
         launch_cmd = "Open " + '"' + app_filename + '"'
@@ -218,7 +216,7 @@ def do_the_bundle(
 
 
 def main():
-
+    """Parse the command line and run the app."""
     # minimal example file
     example = (
         "#!"
