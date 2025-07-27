@@ -52,8 +52,9 @@ def do_the_bundle(
         Specifies the display name of the bundle, visible to users and
         used by Siri.
     app_destination : str, default = 'executable'
-        The destination of the .app file. Can be 'user' (~/Applications),
-        'system' (/Application) or 'executable' (same as app_executable).
+        The destination of the .app file. Can be 'user'
+        (~/Applications), 'system' (/Application) or 'executable'
+        (same as app_executable).
     app_CFBundleIconFile : str or None, default : None
         The (existing) png to be used as an icon file.
     app_extension : str or None, default : None
