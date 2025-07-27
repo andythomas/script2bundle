@@ -16,13 +16,17 @@ requires = ["flit_core >=3.2,<4"]
 homepage = "https://github.com/andythomas/script2bundle"
 
 [tool.ruff]
-line-length = 120
+line-length = 99 # max per pep8
 
 [tool.ruff.lint]
-extend-select = ['D'] # also check docstrings
+extend-select = ["D", "A", "I", "PLW0602", "W505"]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 100
+max-doc-length = 72   # should be max 72 per pep8
 
 [tool.ruff.lint.pydocstyle]
-convention = "numpy" # Accepts: "google", "numpy", or "pep257".
+convention = "numpy"
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]

@@ -23,10 +23,6 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - name: determine last commit to main for comparison
-        run: |
-          git rev-parse origin/main
-          echo "MAIN_LAST_COMMIT=$(git rev-parse origin/main)" >> "${GITHUB_ENV}"
       - name: Examine the pull request title
         id: titlecheck
         continue-on-error: true
@@ -34,35 +30,30 @@ jobs:
           grep -qP --
           '^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)((.+))?:\s.+'
           <<< '${{ github.event.pull_request.title }}'
-      - name: Install code formatting tools ruff and darker
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install ruff
-          python -m pip install darker
-      - name: Check code with ruff
-        id: ruffcheck
+      - name: Install ruff
         run: >
-          ruff check --exit-zero .
-      - name: Apply automatic fixes with ruff
-        id: ruff
-        continue-on-error: true
+          python -m pip install ruff
+      - name: Format code with ruff
+        run: >
+          ruff format .
+      - name: Auto-fix code with ruff
         run: >
           ruff check --fix-only .
-      - name: Display all changes by darker
-        id: changed
+      - name: Test for changes
+        id: ruff
         continue-on-error: true
+        run: |
+          if ! git diff --quiet; then
+            echo "Ruff applied fixes, failing the step."
+            exit 1
+          fi
+      - name: Test for unresolved issues
         run: >
-          darker -L "ruff check" . --check --diff -r ${{ env.MAIN_LAST_COMMIT }}
-      - name: Perform darker changes
-        id: format
-        if: steps.changed.outcome == 'failure'
-        run: >
-          darker -L "ruff check" . -r ${{ env.MAIN_LAST_COMMIT }}
+          ruff check .
       - name: Create pull request
         if: >
-          steps.ruff.outcome == 'failure' ||
-          steps.changed.outcome == 'failure'
-        uses: peter-evans/create-pull-request@v6
+          steps.ruff.outcome == 'failure'
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: ruff action fixes
           title: Fixes by PR-check action
@@ -72,8 +63,7 @@ jobs:
           base: ${{ github.head_ref }}
       - name: Fail if ruff made changes and print explanantion
         if: >
-          steps.ruff.outcome == 'failure' ||
-          steps.changed.outcome == 'failure'
+          steps.ruff.outcome == 'failure'
         run: |
           echo "## Code formatting Error" >> $GITHUB_STEP_SUMMARY
           echo "Some code needs polishing. A pull request with" >> $GITHUB_STEP_SUMMARY
@@ -89,8 +79,7 @@ jobs:
       - name: Failure exit
         if: >
           steps.ruff.outcome == 'failure' ||
-          steps.titlecheck.outcome == 'failure' ||
-          steps.changed.outcome == 'failure'
+          steps.titlecheck.outcome == 'failure'
         run: |
           echo ${{ env.ERROR1 }}
           echo ${{ env.ERROR2 }}
