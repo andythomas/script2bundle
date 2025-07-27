@@ -32,6 +32,7 @@ convention = "numpy"
 version_toml = ["pyproject.toml:project.version"]
 branch = "main"
 build_command = "pip install flit && flit build --no-use-vcs"
+allow_zero_version = true
 
 [tool.semantic_release.changelog]
 exclude_commit_patterns = [

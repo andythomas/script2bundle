@@ -22,4 +22,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           no_operation_mode: true
-          allow_zero_version: true
