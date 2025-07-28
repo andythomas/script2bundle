@@ -27,6 +27,33 @@ import time
 import icnsutil
 
 
+def _is_valid_domain(domain):
+    """Check the validity of the Uniform Type Identifiers."""
+    rfc1035_chars = string.ascii_lowercase + string.digits + "-."
+    if not all(char in rfc1035_chars for char in domain.lower()):
+        return False
+    if len(domain) > 253:
+        return False
+    if "--" in domain:
+        return False
+    if ".." in domain:
+        return False
+    return True
+
+
+def _determine_destination(destination: str, origin: str, filename: str) -> str:
+    """Determine the destination of the bundle."""
+    app_filename = None
+    if destination == "executable":
+        app_filename = os.path.join(origin, filename)
+    elif destination == "system":
+        app_filename = os.path.join("/Applications", filename)
+    elif destination == "user":
+        app_filename = os.path.join(os.path.expanduser("~"), "Applications", filename)
+    assert app_filename is not None
+    return app_filename
+
+
 def do_the_bundle(
     app_executable,
     app_filename=None,
@@ -67,20 +94,6 @@ def do_the_bundle(
     app_terminal : bool, default : False
         Always launch the app via a terminal.
     """
-
-    def is_valid_domain(domain):
-        """Check the validity of the Uniform Type Identifiers."""
-        rfc1035_chars = string.ascii_lowercase + string.digits + "-."
-        if not all(char in rfc1035_chars for char in domain.lower()):
-            return False
-        if len(domain) > 253:
-            return False
-        if "--" in domain:
-            return False
-        if ".." in domain:
-            return False
-        return True
-
     move_file = False
 
     if app_terminal:
@@ -91,7 +104,7 @@ def do_the_bundle(
         terminal_filename = "terminallauncher"
         if os.path.isfile(terminal_filename):
             print(f"{terminal_filename} already exists.")
-            exit(1)
+            sys.exit(1)
         with open(terminal_filename, "w") as terminal_file:
             terminal_file.write(terminal_script)
         os.chmod(terminal_filename, 0o755)
@@ -126,7 +139,7 @@ def do_the_bundle(
 
     # A bundle identifier is strongly recommended
     app_CFBundleIdentifier = "org.script2bundle." + clean_executable
-    if not is_valid_domain(app_CFBundleIdentifier):
+    if not _is_valid_domain(app_CFBundleIdentifier):
         print(f"{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.")
         sys.exit(1)
     info_plist.update(CFBundleIdentifier=app_CFBundleIdentifier)
@@ -134,13 +147,7 @@ def do_the_bundle(
     # It is an application (not, e.g., a framework)
     info_plist.update(CFBundlePackageType="APPL")
 
-    # Determine the destination of the .app file
-    if app_destination == "executable":
-        app_filename = os.path.join(head, app_filename)
-    elif app_destination == "system":
-        app_filename = os.path.join("/Applications", app_filename)
-    elif app_destination == "user":
-        app_filename = os.path.join(os.path.expanduser("~"), "Applications", app_filename)
+    app_filename = _determine_destination(app_destination, head, app_filename)
 
     # Delete possible old version
     if os.path.isdir(app_filename):
@@ -174,7 +181,7 @@ def do_the_bundle(
     # Do the optional connection to a file extension
     if app_extension is not None:
         UTTypeIdentifier = app_CFBundleIdentifier + ".datafile"
-        if not is_valid_domain(UTTypeIdentifier):
+        if not _is_valid_domain(UTTypeIdentifier):
             print(f"{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.")
             sys.exit(1)
 
@@ -215,13 +222,70 @@ def do_the_bundle(
         os.system(launch_cmd)
 
 
-def main():
-    """Parse the command line and run the app."""
-    # minimal example file
-    example = (
-        "#!"
-        + sys.executable
-        + """\n
+def _create_argparser():
+    """Create the command line parser."""
+    parser = argparse.ArgumentParser(
+        description="Generate an application bundle (Mac OS) from an executable."
+    )
+    parser.add_argument(
+        "-e",
+        "--executable",
+        type=str,
+        help="The filename of the (existing) executable file to be bundled.",
+    )
+    parser.add_argument(
+        "-f",
+        "--filename",
+        type=str,
+        help="The filename of the app to be generated (without .app)",
+    )
+    parser.add_argument(
+        "-i",
+        "--CFBundleIconFile",
+        type=str,
+        help="The (existing) png to be used as an icon file.",
+    )
+    parser.add_argument(
+        "-d",
+        "--destination",
+        type=str,
+        choices={"user", "system", "executable"},
+        default="executable",
+        const="executable",
+        nargs="?",
+        help="The destination of the .app file (default: %(default)s).",
+    )
+    parser.add_argument(
+        "--launch", action="store_true", help="Launch the app to register properly."
+    )
+    parser.add_argument(
+        "-x",
+        "--extension",
+        type=str,
+        nargs="*",
+        help="File extension(s) to be opened by the app.",
+    )
+    parser.add_argument(
+        "--CFBundleTypeRole",
+        type=str,
+        choices={"Editor", "Viewer", "Shell", "None"},
+        default="Viewer",
+        const="Viewer",
+        nargs="?",
+        help="The app’s role with respect to the file extension. (default: %(default)s).",
+    )
+    parser.add_argument(
+        "--CFBundleDisplayName",
+        type=str,
+        help="Specifies the display name of the bundle, visible to users and used by Siri.",
+    )
+    parser.add_argument(
+        "--terminal", action="store_true", help="Always launch the app via a terminal."
+    )
+    return parser.parse_args()
+
+
+_example_content = f"""#!{sys.executable}
 # very simple Qt executable to demonstrate script2bundle
 import sys
 
@@ -235,7 +299,7 @@ class MyApplication(QApplication):
         if event.type() == QEvent.Type.FileOpen:
             filename = event.file()
             msg = QMessageBox()
-            msg.setText(f"Opened by {filename}")
+            msg.setText(f"Opened by {{filename}}")
             msg.exec()
         return QApplication.event(self, event)
 
@@ -266,96 +330,31 @@ def main():
 if __name__ == "__main__":
     main()
 """
-    )
 
-    # use a parser to allow some options
-    parser = argparse.ArgumentParser(
-        description="Generate an application bundle (Mac OS) from an executable."
-    )
 
-    # The options:
-    parser.add_argument(
-        "-e",
-        "--executable",
-        type=str,
-        help="The filename of the (existing) executable file to be bundled.",
-    )
+def _create_example() -> str:
+    """Create an examplefile and return its filename."""
+    executable = "example"
+    try:
+        from AppKit import NSApplication  # noqa: F401
+        from Foundation import NSBundle  # noqa: F401
+        from PyQt6.QtCore import QEvent  # noqa: F401
+        from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox  # noqa: F401
+    except ImportError:
+        print("Please install 'PyQt6' and 'pyobjc' to run the example. Exiting.")
+        sys.exit(1)
+    with open(executable, "w") as examplefile:
+        examplefile.write(_example_content)
+    os.chmod(executable, 0o755)
+    return executable
 
-    parser.add_argument(
-        "-f",
-        "--filename",
-        type=str,
-        help="The filename of the app to be generated (without .app)",
-    )
 
-    parser.add_argument(
-        "-i",
-        "--CFBundleIconFile",
-        type=str,
-        help="The (existing) png to be used as an icon file.",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--destination",
-        type=str,
-        choices={"user", "system", "executable"},
-        default="executable",
-        const="executable",
-        nargs="?",
-        help="The destination of the .app file (default: %(default)s).",
-    )
-
-    parser.add_argument(
-        "--launch", action="store_true", help="Launch the app to register properly."
-    )
-
-    parser.add_argument(
-        "-x",
-        "--extension",
-        type=str,
-        nargs="*",
-        help="File extension(s) to be opened by the app.",
-    )
-
-    parser.add_argument(
-        "--CFBundleTypeRole",
-        type=str,
-        choices={"Editor", "Viewer", "Shell", "None"},
-        default="Viewer",
-        const="Viewer",
-        nargs="?",
-        help="The app’s role with respect to the file extension. (default: %(default)s).",
-    )
-
-    parser.add_argument(
-        "--CFBundleDisplayName",
-        type=str,
-        help="Specifies the display name of the bundle, visible to users and used by Siri.",
-    )
-
-    parser.add_argument(
-        "--terminal", action="store_true", help="Always launch the app via a terminal."
-    )
-
-    # initiate the parsing
-    args = parser.parse_args()
-
+def main():
+    """Parse the command line and run the app."""
+    args = _create_argparser()
     app_executable = args.executable
     if app_executable is None:
-        try:
-            from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox  # noqa
-            from PyQt6.QtCore import QEvent  # noqa
-            from AppKit import NSApplication  # noqa
-            from Foundation import NSBundle  # noqa
-        except ImportError:
-            print("Please install 'PyQt6' and 'pyobjc' to run the example. Exiting.")
-            sys.exit(1)
-        app_executable = "example"
-        with open(app_executable, "w") as examplefile:
-            examplefile.write(example)
-        os.chmod(app_executable, 0o755)
-
+        app_executable = _create_example()
     do_the_bundle(
         app_executable,
         app_filename=args.filename,
