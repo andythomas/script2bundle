@@ -15,14 +15,15 @@ https://developer.apple.com/library/archive/documentation/General/Reference/Info
 https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_conc/understand_utis_conc.html
 """
 
-import argparse  # cmd line parser
+import argparse
 import os
 import plistlib
 import re
-import shutil  # copy files
+import shutil
 import string
-import sys  # find the python3 path
+import sys
 import time
+from typing import Optional
 
 import icnsutil
 
@@ -55,14 +56,14 @@ def _determine_destination(destination: str, origin: str, filename: str) -> str:
 
 
 def do_the_bundle(
-    app_executable,
-    app_filename=None,
-    app_CFBundleDisplayName=None,
-    app_destination="executable",
-    app_CFBundleIconFile=None,
-    app_extension=None,
-    app_CFBundleTypeRole="Viewer",
-    app_terminal=False,
+    app_executable: str,
+    app_filename: Optional[str] = None,
+    app_CFBundleDisplayName: Optional[str] = None,
+    app_destination: str = "executable",
+    app_CFBundleIconFile: Optional[str] = None,
+    app_extension: Optional[str] = None,
+    app_CFBundleTypeRole: str = "Viewer",
+    app_terminal: bool = False,
 ) -> str:
     """
     Create the execution bundle from an executable.
@@ -85,7 +86,7 @@ def do_the_bundle(
         The (existing) png to be used as an icon file.
     app_extension : str or None, default : None
         File extension(s) to be opened by the app.
-    app_CFBundleTypeRole : str, default = 'viewer'
+    app_CFBundleTypeRole : str, default = 'Viewer'
         The app’s role with respect to the file extension. Can be
         'Editor', 'Viewer', 'Shell' or 'None'
     app_terminal : bool, default : False
