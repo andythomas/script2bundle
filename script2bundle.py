@@ -15,14 +15,15 @@ https://developer.apple.com/library/archive/documentation/General/Reference/Info
 https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/understanding_utis/understand_utis_conc/understand_utis_conc.html
 """
 
-import argparse  # cmd line parser
+import argparse
 import os
 import plistlib
 import re
-import shutil  # copy files
+import shutil
 import string
-import sys  # find the python3 path
+import sys
 import time
+from typing import Optional
 
 import icnsutil
 
@@ -55,16 +56,15 @@ def _determine_destination(destination: str, origin: str, filename: str) -> str:
 
 
 def do_the_bundle(
-    app_executable,
-    app_filename=None,
-    app_CFBundleDisplayName=None,
-    app_destination="executable",
-    app_CFBundleIconFile=None,
-    app_extension=None,
-    app_CFBundleTypeRole="Viewer",
-    app_launch=False,
-    app_terminal=False,
-):
+    app_executable: str,
+    app_filename: Optional[str] = None,
+    app_CFBundleDisplayName: Optional[str] = None,
+    app_destination: str = "executable",
+    app_CFBundleIconFile: Optional[str] = None,
+    app_extension: Optional[str] = None,
+    app_CFBundleTypeRole: str = "Viewer",
+    app_terminal: bool = False,
+) -> str:
     """
     Create the execution bundle from an executable.
 
@@ -86,11 +86,9 @@ def do_the_bundle(
         The (existing) png to be used as an icon file.
     app_extension : str or None, default : None
         File extension(s) to be opened by the app.
-    app_CFBundleTypeRole : str, default = 'viewer'
+    app_CFBundleTypeRole : str, default = 'Viewer'
         The app’s role with respect to the file extension. Can be
         'Editor', 'Viewer', 'Shell' or 'None'
-    app_launch : bool, default : False
-        Launch the app to register properly.
     app_terminal : bool, default : False
         Always launch the app via a terminal.
     """
@@ -213,13 +211,7 @@ def do_the_bundle(
     with open(info_filename, "wb") as infofile:
         plistlib.dump(info_plist, infofile)
 
-    # Launch if requested;
-    # sleep required to allow the system to recognize the new app
-    if app_launch:
-        time.sleep(2)
-        launch_cmd = "Open " + '"' + app_filename + '"'
-        print(launch_cmd)
-        os.system(launch_cmd)
+    return app_filename
 
 
 def _create_argparser():
@@ -355,7 +347,7 @@ def main():
     app_executable = args.executable
     if app_executable is None:
         app_executable = _create_example()
-    do_the_bundle(
+    appname = do_the_bundle(
         app_executable,
         app_filename=args.filename,
         app_CFBundleDisplayName=args.CFBundleDisplayName,
@@ -363,9 +355,15 @@ def main():
         app_CFBundleIconFile=args.CFBundleIconFile,
         app_extension=args.extension,
         app_CFBundleTypeRole=args.CFBundleTypeRole,
-        app_launch=args.launch,
         app_terminal=args.terminal,
     )
+    # Launch if requested;
+    # sleep required to allow the system to recognize the new app
+    if args.launch:
+        time.sleep(2)
+        launch_cmd = f'Open "{appname}"'
+        print(launch_cmd)
+        os.system(launch_cmd)
 
 
 if __name__ == "__main__":
