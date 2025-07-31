@@ -172,8 +172,8 @@ def do_the_bundle(
         icon_img.add_media(file=app_CFBundleIconFile)
         icon_img.write(iconsfile)
         head, tail = os.path.split(iconsfile)
-        # copy the icon file in the correct place and update plist
-        shutil.copy(iconsfile, resources_dir)
+        # move the icon file in the correct place and update plist
+        shutil.move(iconsfile, resources_dir)
         info_plist.update(CFBundleIconFile=tail)
 
     # Do the optional connection to a file extension
