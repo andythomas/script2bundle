@@ -1,7 +1,6 @@
 # the generated applications bundles and example file
 *.app
-*.icns
-*.png
 example
 __pycache__/
 dist/
+.pytest_cache
