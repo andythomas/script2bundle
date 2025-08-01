@@ -23,11 +23,120 @@ import shutil
 import string
 import sys
 import time
-from typing import Optional
+from io import BytesIO
+from pathlib import Path
+from typing import Optional, Union
 
 import icnsutil
 
 LAUNCHER_NAME = "terminallauncher"
+
+
+class FilesystemDictionary:
+    """Create files and folders in a dictionary."""
+
+    def __init__(self):
+        """Create the root directory."""
+        self.directory_dict = {}
+
+    def _relative_path(self, path: Path) -> Path:
+        """
+        Remove the leading / from a path (if existing).
+
+        Parameters
+        ----------
+        path: Path
+            The path to be cleaned from a prepending slash.
+
+        Returns
+        -------
+        Path
+            The 'relative' path.
+        """
+        if path.parts[0] == "/":
+            path = Path(*path.parts[1:])
+        return path
+
+    def _cd(self, path: Path) -> dict:
+        """
+        Change into a directory and create unexisting ones.
+
+        Parameters
+        ----------
+        path : Path
+            The directory to change into (starting from root).
+
+        Returns
+        -------
+        dict
+            The 'directory' that was changed into.
+        """
+        current_folder = self.directory_dict
+        for subfolder in path.parts:
+            if subfolder not in current_folder:
+                current_folder[subfolder] = {}
+            current_folder = current_folder[subfolder]
+        return current_folder
+
+    def mkdir(self, path: Path):
+        """
+        Create a directory.
+
+        Parameters
+        ----------
+        path: Path
+            The full path of the directory.
+        """
+        path = self._relative_path(path)
+        self._cd(path)
+
+    def save_file(self, file: Path, content: Union[str, bytes]) -> None:
+        """
+        Save a file with given content.
+
+        Parameters
+        ----------
+        file : Path
+            The file including its full path and filename.
+        content : str or bytes
+            The content of the file (text or binary).
+        """
+        file = self._relative_path(file)
+        dir_ref = self._cd(file.parent)
+        if isinstance(content, str):
+            content = content.encode()
+        dir_ref[file.name] = BytesIO(content)
+
+    def write_all_to_disk(self, root: Path) -> None:
+        """
+        Write the directory structure and all files to disk.
+
+        Parameters
+        ----------
+        root : Path
+            The reference folder on the disk that becomes root.
+        """
+        self._write_recursively(root, self.directory_dict)
+
+    def _write_recursively(self, base: Path, subdirectory: dict) -> None:
+        """
+        Write everything recursively to the disk.
+
+        Parameters
+        ----------
+        base: Path
+            The reference point on the disk.
+        subdirectory : dict
+            The dict with only items in this subdirectory.
+        """
+        Path.mkdir(base, parents=True, exist_ok=True)
+        for name, obj in subdirectory.items():
+            full_path = base / Path(name)
+            if isinstance(obj, dict):
+                self._write_recursively(full_path, obj)
+            elif isinstance(obj, BytesIO):
+                with open(full_path, "wb") as f:
+                    f.write(obj.getvalue())
 
 
 def _is_valid_domain(domain):
