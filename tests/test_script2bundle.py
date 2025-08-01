@@ -32,14 +32,28 @@ if __name__ == "__main__":
 
 
 def open_app(file: Path) -> None:
-    """Open the application."""
+    """
+    Open the application.
+
+    Parameters
+    ----------
+    file : Path
+        The app or file with linked extension to be opened.
+    """
     completed_process = subprocess.run(["Open", file])
     assert completed_process.returncode == 0
     time.sleep(2)
 
 
 def kill_app(name: str) -> None:
-    """Kill the application."""
+    """
+    Kill the application.
+
+    Parameters
+    ----------
+    name : str
+        The process name to be killed.
+    """
     command_list = [
         "pkill",
         "-f",
@@ -50,12 +64,26 @@ def kill_app(name: str) -> None:
 
 
 def delete_bundle(file: Path) -> None:
-    """Delete the bundle."""
+    """
+    Delete the bundle.
+
+    Parameters
+    ----------
+    file : Path
+        The application bundle to be deleted.
+    """
     shutil.rmtree(file)
 
 
 def get_plist(app: Path) -> dict:
-    """Get the plist file from an app."""
+    """
+    Get the plist file from an app.
+
+    Parameters
+    ----------
+    app : Path
+        The application from which the plist is extracted.
+    """
     plist_file = Path(app) / "Contents" / "Info.plist"
     with open(plist_file, "rb") as input_file:
         plist = plistlib.load(input_file)
@@ -178,7 +206,15 @@ destinations = ["user", "system"]
 
 @pytest.mark.parametrize("destination", destinations)
 def test_destination(destination: str) -> None:
-    """Test the bundle with different destinations."""
+    """
+    Test the bundle with different destinations.
+
+    Parameters
+    ----------
+    destination : str
+        Can be either 'executable' (some as script), 'user'
+        (~/Applications) or 'system' (/Applications).
+    """
     # ~/Applications
     command_list = [
         python_executable,
@@ -256,7 +292,14 @@ types = ["Editor", "Shell", "None"]
 
 @pytest.mark.parametrize("type_role", types)
 def test_type_role(type_role: str) -> None:
-    """Test other type role than 'viewer'."""
+    """
+    Test other type role than 'viewer'.
+
+    Parameters
+    ----------
+    type_role : str
+        Can either be 'Viewer', 'Editor', 'Shell' or 'None'.
+    """
     name = "example"
     file = Path(name + ".app")
     extension = "s2bfile"
