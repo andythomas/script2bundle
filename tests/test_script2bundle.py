@@ -15,20 +15,35 @@ import pytest
 
 python_executable = sys.executable
 
+minimal_file = f"""#!{python_executable}
+# minmal qt6 app to test scrpt2bundle
+
+import sys
+
+from PyQt6.QtWidgets import QApplication, QMainWindow
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    ex = QMainWindow()
+    ex.setWindowTitle("Example")
+    ex.show()
+    sys.exit(app.exec())
+"""
+
 
 def open_app(file: Path) -> None:
     """Open the application."""
     completed_process = subprocess.run(["Open", file])
     assert completed_process.returncode == 0
-    time.sleep(1)
+    time.sleep(2)
 
 
-def kill_app() -> None:
+def kill_app(name: str) -> None:
     """Kill the application."""
     command_list = [
         "pkill",
         "-f",
-        "example",
+        name,
     ]
     completed_process = subprocess.run(command_list, check=True)
     assert completed_process.returncode == 0
@@ -46,6 +61,27 @@ def get_plist(app: Path) -> dict:
         plist = plistlib.load(input_file)
     assert isinstance(plist, dict)
     return plist
+
+
+def count_terminal_windows() -> int:
+    """Count the open Terminal windows."""
+    completed_process = subprocess.run(
+        ["osascript", "-e", 'tell application "Terminal" to count windows'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    return int(completed_process.stdout.strip())
+
+
+def close_last_terminal_window() -> None:
+    """Close the last Terminal window."""
+    command_list = [
+        "osascript",
+        "-e",
+        'tell application "Terminal" to close last window',
+    ]
+    subprocess.run(command_list)
 
 
 def bundle(command_list: List[str], file: Path) -> None:
@@ -71,62 +107,64 @@ def bundle(command_list: List[str], file: Path) -> None:
 
 def test_without_parameters() -> None:
     """Test the bundle with the example file."""
+    name = "example"
     command_list = [
         python_executable,
         "-m",
         "script2bundle",
     ]
-    file = Path("example.app")
+    file = Path(name + ".app")
     bundle(command_list, file)
     open_app(file)
-    kill_app()
+    kill_app(name)
     delete_bundle(file)
 
 
 def test_launch() -> None:
     """Test the auto-open."""
+    name = "example"
     command_list = [
         python_executable,
         "-m",
         "script2bundle",
         "--launch",
     ]
-    file = Path("example.app")
+    file = Path(name + ".app")
     bundle(command_list, file)
-    kill_app()
+    kill_app(name)
     delete_bundle(file)
 
 
 def test_filename() -> None:
     """Test the bundle with a custom filename."""
     characters = string.ascii_letters + string.digits
-    file = "".join(random.choices(characters, k=8))
+    name = "".join(random.choices(characters, k=8))
     command_list = [
         python_executable,
         "-m",
         "script2bundle",
         "-f",
-        file,
+        name,
     ]
-    file = Path(file + ".app")
+    file = Path(name + ".app")
     bundle(command_list, file)
     delete_bundle(file)
 
 
 def test_icon() -> None:
     """Test the bundle with a custom filename."""
-    file = "icon"
-    icon_file = file + ".png"
+    name = "icon"
+    icon_file = name + ".png"
     command_list = [
         python_executable,
         "-m",
         "script2bundle",
         "-f",
-        file,
+        name,
         "-i",
         Path("media") / Path(icon_file),
     ]
-    file = Path(file + ".app")
+    file = Path(name + ".app")
     bundle(command_list, file)
     plist = get_plist(file)
     assert plist["CFBundleIconFile"] == icon_file + ".icns"
@@ -193,11 +231,11 @@ def test_extension() -> None:
     file_with_extension = Path(name + "." + extension)
     bundle(command_list, file)
     open_app(file)
-    kill_app()
+    kill_app(name)
     with open(file_with_extension, "w") as test_file:
         test_file.write(".")
     open_app(file_with_extension)
-    kill_app()
+    kill_app(name)
     plist = get_plist(file)
     entry1 = plist["CFBundleDocumentTypes"][0]
     datafile = str(file) + " datafile"
@@ -235,3 +273,45 @@ def test_type_role(type_role: str) -> None:
     plist = get_plist(file)
     assert plist["CFBundleDocumentTypes"][0]["CFBundleTypeRole"] == type_role
     delete_bundle(file)
+
+
+def test_terminal() -> None:
+    """Test the launch via a terminal."""
+    name = "example"
+    command_list = [
+        python_executable,
+        "-m",
+        "script2bundle",
+        "--terminal",
+    ]
+    file = Path(name + ".app")
+    bundle(command_list, file)
+    before = count_terminal_windows()
+    open_app(file)
+    after = count_terminal_windows()
+    assert after == before + 1
+    kill_app(name)
+    # close_last_terminal_window()
+    # This does not work if pytest is also called via the command line
+    delete_bundle(file)
+
+
+def test_executable() -> None:
+    """Test to wrap another executable."""
+    name = "s2btest"
+    with open(name, "w") as examplefile:
+        examplefile.write(minimal_file)
+    os.chmod(name, 0o755)
+    file = Path(name + ".app")
+    command_list = [
+        python_executable,
+        "-m",
+        "script2bundle",
+        "-e",
+        name,
+    ]
+    bundle(command_list, file)
+    open_app(file)
+    kill_app(name)
+    delete_bundle(file)
+    os.remove(name)

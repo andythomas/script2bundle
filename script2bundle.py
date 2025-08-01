@@ -27,6 +27,8 @@ from typing import Optional
 
 import icnsutil
 
+LAUNCHER_NAME = "terminallauncher"
+
 
 def _is_valid_domain(domain):
     """Check the validity of the Uniform Type Identifiers."""
@@ -99,7 +101,7 @@ def do_the_bundle(
         terminal_script = (
             "#!/bin/bash\n/usr/bin/open '" + os.path.abspath(app_executable) + "' -a Terminal"
         )
-        terminal_filename = "terminallauncher"
+        terminal_filename = LAUNCHER_NAME
         if os.path.isfile(terminal_filename):
             print(f"{terminal_filename} already exists.")
             sys.exit(1)
