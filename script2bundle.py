@@ -153,11 +153,11 @@ class ApplicationBundle(_FilesystemDictionary):
             The full path and name of the executable to be bundled.
         """
         super().__init__()
-        self.original = executable
-        self.mkdir(Path("Contents") / Path("Resources"))
+        self.original_path = executable.parent
         self.clean_executable = re.sub(r"[^A-Za-z0-9\.-]+", "", executable.name)
         self.set_destination("executable")
         self.set_filename(self.clean_executable)
+        self.mkdir(Path("Contents") / Path("Resources"))
         script = Path(executable).read_bytes()
         self.save_file(Path("Contents") / Path("MacOS") / self.clean_executable, script)
         self.plist_dict = dict(CFBundleExecutable=self.clean_executable)
@@ -181,7 +181,7 @@ class ApplicationBundle(_FilesystemDictionary):
     def set_destination(self, destination: str) -> None:
         """Set the destination of the bundle."""
         if destination == "executable":
-            self.destination = self.original.parent
+            self.destination = self.original_path
         elif destination == "system":
             self.destination = Path ("/Applications")
         elif destination == "user":
@@ -269,25 +269,6 @@ def do_the_bundle(
         Always launch the app via a terminal.
     """
     move_file = False
-
-    if app_terminal:
-        """Write a new script to be bundled."""
-        terminal_script = (
-            "#!/bin/bash\n/usr/bin/open '" + os.path.abspath(app_executable) + "' -a Terminal"
-        )
-        terminal_filename = LAUNCHER_NAME
-        if os.path.isfile(terminal_filename):
-            print(f"{terminal_filename} already exists.")
-            sys.exit(1)
-        with open(terminal_filename, "w") as terminal_file:
-            terminal_file.write(terminal_script)
-        os.chmod(terminal_filename, 0o755)
-        if app_filename is None:
-            app_filename = app_executable
-        app_executable = terminal_filename
-        move_file = True
-
-
 
     # Do the optional connection to a file extension
     if app_extension is not None:
@@ -454,6 +435,20 @@ def main():
     if app_executable is None:
         app_executable = _create_example()
     exec = Path(app_executable)
+
+    if args.terminal:
+        terminal_script = (
+            f"#!/bin/bash\n/usr/bin/open '{exec.resolve()}' -a Terminal"
+        )
+        terminal_filename = LAUNCHER_NAME
+        if Path(terminal_filename).exists():
+            print(f"{terminal_filename} already exists.")
+            sys.exit(1)
+        with open(terminal_filename, "w") as terminal_file:
+            terminal_file.write(terminal_script)
+        os.chmod(terminal_filename, 0o755)
+        exec = Path(terminal_filename)
+
     vfs = ApplicationBundle(exec)
     if args.destination:
         vfs.set_destination(args.destination)
