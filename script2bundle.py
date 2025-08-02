@@ -155,15 +155,15 @@ class ApplicationBundle(_FilesystemDictionary):
         super().__init__()
         self.original = executable
         self.mkdir(Path("Contents") / Path("Resources"))
-        clean_name = re.sub(r"[^A-Za-z0-9\.-]+", "", executable.name)
-        self.executable = clean_name
+        self.clean_executable = re.sub(r"[^A-Za-z0-9\.-]+", "", executable.name)
         self.set_destination("executable")
+        self.set_filename(self.clean_executable)
         script = Path(executable).read_bytes()
-        self.save_file(Path("Contents") / Path("MacOS") / self.executable, script)
-        self.plist_dict = dict(CFBundleExecutable=self.executable)
+        self.save_file(Path("Contents") / Path("MacOS") / self.clean_executable, script)
+        self.plist_dict = dict(CFBundleExecutable=self.clean_executable)
         self.plist_dict.update(CFBundlePackageType="APPL")
-        self.set_CFBundleDisplayName(self.executable)
-        self.set_CFBundleIdentifier(self.executable)
+        self.set_CFBundleDisplayName(self.clean_executable)
+        self.set_CFBundleIdentifier(self.clean_executable)
 
     def set_CFBundleDisplayName(self, name: str):
         self.plist_dict.update(CFBundleDisplayName=name)
@@ -174,6 +174,9 @@ class ApplicationBundle(_FilesystemDictionary):
             print(f"{identifier} is not a valid domain name as set forth in RFC 1035.")
             sys.exit(1)
         self.plist_dict.update(CFBundleIdentifier=identifier)
+
+    def set_filename(self, name):
+        self.filename = name + ".app"
 
     def set_destination(self, destination: str) -> None:
         """Set the destination of the bundle."""
@@ -199,13 +202,13 @@ class ApplicationBundle(_FilesystemDictionary):
         self.plist_dict.update(CFBundleIconFile=iconsfile.name)
 
     def write_bundle(self) -> Path:
-        destination =  self.destination / Path(str(self.executable) + ".app")
+        destination =  self.destination / Path(self.filename)
         if destination.exists():
             shutil.rmtree(destination)
         plist = plistlib.dumps(self.plist_dict)
         self.save_file(Path("Contents") / Path("Info.plist"), plist)
         self.write_all_to_disk(destination)
-        executable = destination / Path("Contents") / Path("MacOS") / self.executable
+        executable = destination / Path("Contents") / Path("MacOS") / self.clean_executable
         os.chmod(executable, 0o755)
         return destination
 
@@ -454,6 +457,8 @@ def main():
     vfs = ApplicationBundle(exec)
     if args.destination:
         vfs.set_destination(args.destination)
+    if args.filename:
+        vfs.set_filename(args.filename)
     if args.CFBundleDisplayName:
         vfs.set_CFBundleDisplayName(args.CFBundleDisplayName)
     if args.CFBundleIconFile:
