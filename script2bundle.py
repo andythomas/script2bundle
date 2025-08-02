@@ -189,10 +189,10 @@ class ApplicationBundle(_FilesystemDictionary):
             self.destination = Path.home() / "Applications"
 
     def set_icon(self, icon: Path):
-        if icon.name[-4:] == ".png":
-             iconsfile = Path(icon.name[:-4] + ".icns")
-        else:
-            iconsfile = Path(icon.name + ".icns")
+        # if icon.name[-4:] == ".png":
+        #      iconsfile = Path(icon.name[:-4] + ".icns")
+        # else:
+        iconsfile = Path(icon.name + ".icns")
         icon_img = icnsutil.IcnsFile()
         icon_img.add_media(file=icon)
         with NamedTemporaryFile(suffix=".icns") as tmp:
@@ -415,7 +415,6 @@ def main():
         vfs.set_icon(Path(args.CFBundleIconFile))
     if args.CFBundleTypeRole:
         vfs.set_CFBundleTypeRole(args.CFBundleTypeRole)
-
     if args.extension:
         vfs.set_extension(args.extension)
     appname = vfs.write_bundle()

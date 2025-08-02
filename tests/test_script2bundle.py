@@ -181,20 +181,22 @@ def test_filename() -> None:
 
 def test_icon() -> None:
     """Test the bundle with a custom filename."""
-    name = "example"
-    icon_file = Path("media") / Path("icon.png")
+    name = "icon"
+    icon_file = name + ".png"
     command_list = [
         python_executable,
         "-m",
         "script2bundle",
+        "-f",
+        name,
         "-i",
-         icon_file,
+        Path("media") / Path(icon_file),
     ]
     file = Path(name + ".app")
     bundle(command_list, file)
     plist = get_plist(file)
-    assert plist["CFBundleIconFile"] == icon_file.name[:-4] + ".icns"
-    icon_file = Path(file) / "Contents" / "Resources" / Path(icon_file.name[:-4] + ".icns")
+    assert plist["CFBundleIconFile"] == icon_file + ".icns"
+    icon_file = Path(file) / "Contents" / "Resources" / Path(icon_file + ".icns")
     assert icon_file.is_file()
     delete_bundle(file)
 
@@ -272,7 +274,7 @@ def test_extension() -> None:
     kill_app(name)
     plist = get_plist(file)
     entry1 = plist["CFBundleDocumentTypes"][0]
-    datafile = name + " datafile"
+    datafile = str(file) + " datafile"
     identifier = str("org.script2bundle." + name + ".datafile")
     assert entry1["CFBundleTypeName"] == datafile
     assert entry1["CFBundleTypeRole"] == "Viewer"
@@ -318,7 +320,7 @@ def test_type_role(type_role: str) -> None:
 
 def test_terminal() -> None:
     """Test the launch via a terminal."""
-    name = "terminallauncher"
+    name = "example"
     command_list = [
         python_executable,
         "-m",
@@ -331,7 +333,7 @@ def test_terminal() -> None:
     open_app(file)
     after = count_terminal_windows()
     assert after == before + 1
-    kill_app("example")
+    kill_app(name)
     # close_last_terminal_window()
     # This does not work if pytest is also called via the command line
     delete_bundle(file)
