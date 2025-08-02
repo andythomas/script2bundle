@@ -26,6 +26,7 @@ import time
 from io import BytesIO
 from pathlib import Path
 from typing import Optional, Union
+from tempfile import NamedTemporaryFile
 
 import icnsutil
 
@@ -154,10 +155,10 @@ class ApplicationBundle(_FilesystemDictionary):
         super().__init__()
         self.original = executable
         self.mkdir(Path("Contents") / Path("Resources"))
-        script = Path(executable).read_bytes()
         clean_name = re.sub(r"[^A-Za-z0-9\.-]+", "", executable.name)
         self.executable = clean_name
         self.set_destination("executable")
+        script = Path(executable).read_bytes()
         self.save_file(Path("Contents") / Path("MacOS") / self.executable, script)
         self.plist_dict = dict(CFBundleExecutable=self.executable)
         self.plist_dict.update(CFBundlePackageType="APPL")
@@ -182,6 +183,20 @@ class ApplicationBundle(_FilesystemDictionary):
             self.destination = Path ("/Applications")
         elif destination == "user":
             self.destination = Path.home() / "Applications"
+
+    def set_icon(self, icon: Path):
+        if icon.name[-4:] == ".png":
+             iconsfile = Path(icon.name[:-4] + ".icns")
+        else:
+            iconsfile = Path(icon.name + ".icns")
+        icon_img = icnsutil.IcnsFile()
+        icon_img.add_media(file=icon)
+        with NamedTemporaryFile(suffix=".icns") as tmp:
+            icon_img.write(tmp.name)
+            tmp.seek(0)
+            icns_bytes = tmp.read()
+        self.save_file(Path("Contents") / Path("Resources") / iconsfile, icns_bytes)
+        self.plist_dict.update(CFBundleIconFile=iconsfile.name)
 
     def write_bundle(self) -> Path:
         destination =  self.destination / Path(str(self.executable) + ".app")
@@ -269,17 +284,7 @@ def do_the_bundle(
         app_executable = terminal_filename
         move_file = True
 
-    # Add the optional icon file if requested
-    if app_CFBundleIconFile is not None:
-        iconsfile = app_CFBundleIconFile + ".icns"
-        # generate the proper filetype from a png
-        icon_img = icnsutil.IcnsFile()
-        icon_img.add_media(file=app_CFBundleIconFile)
-        icon_img.write(iconsfile)
-        head, tail = os.path.split(iconsfile)
-        # move the icon file in the correct place and update plist
-        shutil.move(iconsfile, resources_dir)
-        info_plist.update(CFBundleIconFile=tail)
+
 
     # Do the optional connection to a file extension
     if app_extension is not None:
@@ -451,6 +456,8 @@ def main():
         vfs.set_destination(args.destination)
     if args.CFBundleDisplayName:
         vfs.set_CFBundleDisplayName(args.CFBundleDisplayName)
+    if args.CFBundleIconFile:
+        vfs.set_icon(Path(args.CFBundleIconFile))
     appname = vfs.write_bundle()
     # Launch if requested;
     # sleep required to allow the system to recognize the new app

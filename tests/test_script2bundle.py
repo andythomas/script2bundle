@@ -181,22 +181,20 @@ def test_filename() -> None:
 
 def test_icon() -> None:
     """Test the bundle with a custom filename."""
-    name = "icon"
-    icon_file = name + ".png"
+    name = "example"
+    icon_file = Path("media") / Path("icon.png")
     command_list = [
         python_executable,
         "-m",
         "script2bundle",
-        "-f",
-        name,
         "-i",
-        Path("media") / Path(icon_file),
+         icon_file,
     ]
     file = Path(name + ".app")
     bundle(command_list, file)
     plist = get_plist(file)
-    assert plist["CFBundleIconFile"] == icon_file + ".icns"
-    icon_file = Path(file) / "Contents" / "Resources" / Path(icon_file + ".icns")
+    assert plist["CFBundleIconFile"] == icon_file.name[:-4] + ".icns"
+    icon_file = Path(file) / "Contents" / "Resources" / Path(icon_file.name[:-4] + ".icns")
     assert icon_file.is_file()
     delete_bundle(file)
 
