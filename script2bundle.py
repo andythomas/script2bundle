@@ -32,7 +32,7 @@ import icnsutil
 LAUNCHER_NAME = "terminallauncher"
 
 
-class FilesystemDictionary:
+class _FilesystemDictionary:
     """Create files and folders in a dictionary."""
 
     def __init__(self):
@@ -139,18 +139,71 @@ class FilesystemDictionary:
                     f.write(obj.getvalue())
 
 
-def _is_valid_domain(domain):
-    """Check the validity of the Uniform Type Identifiers."""
-    rfc1035_chars = string.ascii_lowercase + string.digits + "-."
-    if not all(char in rfc1035_chars for char in domain.lower()):
-        return False
-    if len(domain) > 253:
-        return False
-    if "--" in domain:
-        return False
-    if ".." in domain:
-        return False
-    return True
+class ApplicationBundle(_FilesystemDictionary):
+    """Create application bundle and manag content."""
+
+    def __init__(self, executable: Path) -> None:
+        """
+        Store the executable and plist in the correct directories.
+
+        Parameters
+        ----------
+        executable : Path
+            The full path and name of the executable to be bundled.
+        """
+        super().__init__()
+        self.mkdir(Path("Contents") / Path("Resources"))
+        script = Path(executable).read_bytes()
+        clean_name = re.sub(r"[^A-Za-z0-9\.-]+", "", executable.name)
+        script_path = Path("Contents") / Path("MacOS") / clean_name
+        self.save_file(script_path, script)
+        self.plist_dict = dict(CFBundleExecutable=clean_name)
+        self.plist_dict.update(CFBundlePackageType="APPL")
+        self.set_CFBundleDisplayName(clean_name)
+        self.set_CFBundleIdentifier(clean_name)
+        self.destination = executable.parent / Path(clean_name + ".app")
+        self.executable = script_path
+
+
+    def set_CFBundleDisplayName(self, name: str):
+        name += ".app"
+        self.plist_dict.update(CFBundleDisplayName=name)
+
+    def set_CFBundleIdentifier(self, identifier: str):
+        identifier = "org.script2bundle." + identifier
+        if not self._is_valid_domain(identifier):
+            print(f"{identifier} is not a valid domain name as set forth in RFC 1035.")
+            sys.exit(1)
+        self.plist_dict.update(CFBundleIdentifier=identifier)
+
+    def write_bundle(self):
+        # Delete possible old version
+        if self.destination.exists():
+            shutil.rmtree(self.destination)
+        plist = plistlib.dumps(self.plist_dict)
+        self.save_file(Path("Contents") / Path("Info.plist"), plist)
+        self.write_all_to_disk(self.destination)
+        os.chmod(self.destination / self.executable, 0o755)
+
+    def _is_valid_domain(self, domain):
+        """Check the validity of the Uniform Type Identifiers."""
+        rfc1035_chars = string.ascii_lowercase + string.digits + "-."
+        if not all(char in rfc1035_chars for char in domain.lower()):
+            return False
+        if len(domain) > 253:
+            return False
+        if "--" in domain:
+            return False
+        if ".." in domain:
+            return False
+        return True
+
+
+    def print(self):
+        print(self.directory_dict)
+
+
+
 
 
 def _determine_destination(destination: str, origin: str, filename: str) -> str:
@@ -222,58 +275,11 @@ def do_the_bundle(
         app_executable = terminal_filename
         move_file = True
 
-    # CFBundleExecutable: Name of the bundle’s executable file
-    head, tail = os.path.split(app_executable)
-    # Strip 'problematic' characters
-    clean_executable = re.sub(r"[^A-Za-z0-9\.-]+", "", tail)
-    if clean_executable != tail:
-        print(
-            f"Warning: Stripping characters from filename and duplicating executable ({clean_executable})."
-        )
-        clean_filename = os.path.join(head, clean_executable)
-        shutil.copy2(app_executable, clean_filename)
-        app_executable = clean_filename
-        move_file = True
-    # start the plist file with the name of the executable
-    info_plist = dict(CFBundleExecutable=clean_executable)
-
-    # The bundle needs a filename and a name to be displayed
-    if app_filename is None:
-        app_filename = clean_executable
-    app_filename = app_filename + ".app"
-
-    if app_CFBundleDisplayName is None:
-        app_CFBundleDisplayName = app_filename
-    info_plist.update(CFBundleDisplayName=app_CFBundleDisplayName)
-
-    # A bundle identifier is strongly recommended
-    app_CFBundleIdentifier = "org.script2bundle." + clean_executable
-    if not _is_valid_domain(app_CFBundleIdentifier):
-        print(f"{app_CFBundleIdentifier} is not a valid domain name as set forth in RFC 1035.")
-        sys.exit(1)
-    info_plist.update(CFBundleIdentifier=app_CFBundleIdentifier)
-
-    # It is an application (not, e.g., a framework)
-    info_plist.update(CFBundlePackageType="APPL")
 
     app_filename = _determine_destination(app_destination, head, app_filename)
 
-    # Delete possible old version
-    if os.path.isdir(app_filename):
-        shutil.rmtree(app_filename)
 
-    # Generate the directory framework
-    contents_dir = os.path.join(app_filename, "Contents")
-    macos_dir = os.path.join(contents_dir, "MacOS")
-    resources_dir = os.path.join(contents_dir, "Resources")
-    os.makedirs(macos_dir, exist_ok=True)
-    os.makedirs(resources_dir, exist_ok=True)
 
-    # copy the executable in the correct place
-    if move_file:
-        shutil.move(app_executable, macos_dir)
-    else:
-        shutil.copy(app_executable, macos_dir)
 
     # Add the optional icon file if requested
     if app_CFBundleIconFile is not None:
@@ -318,9 +324,7 @@ def do_the_bundle(
         info_plist.update(UTExportedTypeDeclarations=app_UTExportedTypeDeclarations)
 
     # Write the Info.plist file
-    info_filename = os.path.join(contents_dir, "Info.plist")
-    with open(info_filename, "wb") as infofile:
-        plistlib.dump(info_plist, infofile)
+
 
     return app_filename
 
@@ -458,16 +462,20 @@ def main():
     app_executable = args.executable
     if app_executable is None:
         app_executable = _create_example()
-    appname = do_the_bundle(
-        app_executable,
-        app_filename=args.filename,
-        app_CFBundleDisplayName=args.CFBundleDisplayName,
-        app_destination=args.destination,
-        app_CFBundleIconFile=args.CFBundleIconFile,
-        app_extension=args.extension,
-        app_CFBundleTypeRole=args.CFBundleTypeRole,
-        app_terminal=args.terminal,
-    )
+    # appname = do_the_bundle(
+    #     app_executable,
+    #     app_filename=args.filename,
+    #     app_CFBundleDisplayName=args.CFBundleDisplayName,
+    #     app_destination=args.destination,
+    #     app_CFBundleIconFile=args.CFBundleIconFile,
+    #     app_extension=args.extension,
+    #     app_CFBundleTypeRole=args.CFBundleTypeRole,
+    #     app_terminal=args.terminal,
+    # )
+    exec = Path(app_executable)
+
+    vfs = ApplicationBundle(exec)
+    vfs.write_bundle()
     # Launch if requested;
     # sleep required to allow the system to recognize the new app
     if args.launch:
