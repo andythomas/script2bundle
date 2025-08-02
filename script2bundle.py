@@ -164,6 +164,7 @@ class ApplicationBundle(_FilesystemDictionary):
         self.plist_dict.update(CFBundlePackageType="APPL")
         self.set_CFBundleDisplayName(self.clean_executable)
         self.set_CFBundleIdentifier(self.clean_executable)
+        self.CFBundleTypeRole = "Viewer"
 
     def set_CFBundleDisplayName(self, name: str):
         self.plist_dict.update(CFBundleDisplayName=name)
@@ -201,6 +202,35 @@ class ApplicationBundle(_FilesystemDictionary):
         self.save_file(Path("Contents") / Path("Resources") / iconsfile, icns_bytes)
         self.plist_dict.update(CFBundleIconFile=iconsfile.name)
 
+    def set_extension(self, extension: str):
+        self.extension = extension
+        app_CFBundleIdentifier = self.plist_dict["CFBundleIdentifier"]
+        UTTypeIdentifier = app_CFBundleIdentifier + ".datafile"
+        if not self._is_valid_domain(UTTypeIdentifier):
+            print(f"{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.")
+            sys.exit(1)
+        file_type = self.plist_dict["CFBundleDisplayName"] + " datafile"
+        app_CFBundleDocumentTypes = [
+            {
+                "LSItemContentTypes": [UTTypeIdentifier],
+                "CFBundleTypeName": file_type,
+                "CFBundleTypeRole": self.CFBundleTypeRole,
+            }
+        ]
+        self.plist_dict.update(CFBundleDocumentTypes=app_CFBundleDocumentTypes)
+        app_UTExportedTypeDeclarations = [
+            {
+                "UTTypeIdentifier": UTTypeIdentifier,
+                "UTTypeTagSpecification": {"public.filename-extension": extension},
+                "UTTypeConformsTo": "public.data",
+                "UTTypeDescription": file_type,
+            }
+        ]
+        self.plist_dict.update(UTExportedTypeDeclarations=app_UTExportedTypeDeclarations)
+
+    def set_CFBundleTypeRole(self, role: str):
+        self.CFBundleTypeRole = role
+
     def write_bundle(self) -> Path:
         destination =  self.destination / Path(self.filename)
         if destination.exists():
@@ -224,81 +254,6 @@ class ApplicationBundle(_FilesystemDictionary):
         if ".." in domain:
             return False
         return True
-
-
-    def print(self):
-        print(self.directory_dict)
-
-
-
-def do_the_bundle(
-    app_executable: str,
-    app_filename: Optional[str] = None,
-    app_CFBundleDisplayName: Optional[str] = None,
-    app_destination: str = "executable",
-    app_CFBundleIconFile: Optional[str] = None,
-    app_extension: Optional[str] = None,
-    app_CFBundleTypeRole: str = "Viewer",
-    app_terminal: bool = False,
-) -> str:
-    """
-    Create the execution bundle from an executable.
-
-    Parameters
-    ----------
-    app_executable : str
-        The filename of the (existing) executable file to be bundled.
-    app_filename : str or None, default : None
-        The filename of the app to be generated (without .app). Defaults
-        to app_executable + '.app'
-    app_CFBundleDisplayName : str or None, default : None
-        Specifies the display name of the bundle, visible to users and
-        used by Siri.
-    app_destination : str, default = 'executable'
-        The destination of the .app file. Can be 'user'
-        (~/Applications), 'system' (/Application) or 'executable'
-        (same as app_executable).
-    app_CFBundleIconFile : str or None, default : None
-        The (existing) png to be used as an icon file.
-    app_extension : str or None, default : None
-        File extension(s) to be opened by the app.
-    app_CFBundleTypeRole : str, default = 'Viewer'
-        The app’s role with respect to the file extension. Can be
-        'Editor', 'Viewer', 'Shell' or 'None'
-    app_terminal : bool, default : False
-        Always launch the app via a terminal.
-    """
-    move_file = False
-
-    # Do the optional connection to a file extension
-    if app_extension is not None:
-        UTTypeIdentifier = app_CFBundleIdentifier + ".datafile"
-        if not _is_valid_domain(UTTypeIdentifier):
-            print(f"{UTTypeIdentifier} is not a valid domain name as set forth in RFC 1035.")
-            sys.exit(1)
-
-        file_type = app_CFBundleDisplayName + " datafile"
-
-        app_CFBundleDocumentTypes = [
-            {
-                "LSItemContentTypes": [UTTypeIdentifier],
-                "CFBundleTypeName": file_type,
-                "CFBundleTypeRole": app_CFBundleTypeRole,
-            }
-        ]
-
-        info_plist.update(CFBundleDocumentTypes=app_CFBundleDocumentTypes)
-
-        app_UTExportedTypeDeclarations = [
-            {
-                "UTTypeIdentifier": UTTypeIdentifier,
-                "UTTypeTagSpecification": {"public.filename-extension": app_extension},
-                "UTTypeConformsTo": "public.data",
-                "UTTypeDescription": file_type,
-            }
-        ]
-
-        info_plist.update(UTExportedTypeDeclarations=app_UTExportedTypeDeclarations)
 
 
 def _create_argparser():
@@ -458,7 +413,14 @@ def main():
         vfs.set_CFBundleDisplayName(args.CFBundleDisplayName)
     if args.CFBundleIconFile:
         vfs.set_icon(Path(args.CFBundleIconFile))
+    if args.CFBundleTypeRole:
+        vfs.set_CFBundleTypeRole(args.CFBundleTypeRole)
+
+    if args.extension:
+        vfs.set_extension(args.extension)
     appname = vfs.write_bundle()
+    if args.terminal:
+        os.remove(exec)
     # Launch if requested;
     # sleep required to allow the system to recognize the new app
     if args.launch:

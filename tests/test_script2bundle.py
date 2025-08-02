@@ -272,7 +272,7 @@ def test_extension() -> None:
     kill_app(name)
     plist = get_plist(file)
     entry1 = plist["CFBundleDocumentTypes"][0]
-    datafile = str(file) + " datafile"
+    datafile = name + " datafile"
     identifier = str("org.script2bundle." + name + ".datafile")
     assert entry1["CFBundleTypeName"] == datafile
     assert entry1["CFBundleTypeRole"] == "Viewer"
