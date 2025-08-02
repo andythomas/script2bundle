@@ -152,21 +152,19 @@ class ApplicationBundle(_FilesystemDictionary):
             The full path and name of the executable to be bundled.
         """
         super().__init__()
+        self.original = executable
         self.mkdir(Path("Contents") / Path("Resources"))
         script = Path(executable).read_bytes()
         clean_name = re.sub(r"[^A-Za-z0-9\.-]+", "", executable.name)
-        script_path = Path("Contents") / Path("MacOS") / clean_name
-        self.save_file(script_path, script)
-        self.plist_dict = dict(CFBundleExecutable=clean_name)
+        self.executable = clean_name
+        self.set_destination("executable")
+        self.save_file(Path("Contents") / Path("MacOS") / self.executable, script)
+        self.plist_dict = dict(CFBundleExecutable=self.executable)
         self.plist_dict.update(CFBundlePackageType="APPL")
-        self.set_CFBundleDisplayName(clean_name)
-        self.set_CFBundleIdentifier(clean_name)
-        self.destination = executable.parent / Path(clean_name + ".app")
-        self.executable = script_path
-
+        self.set_CFBundleDisplayName(self.executable)
+        self.set_CFBundleIdentifier(self.executable)
 
     def set_CFBundleDisplayName(self, name: str):
-        name += ".app"
         self.plist_dict.update(CFBundleDisplayName=name)
 
     def set_CFBundleIdentifier(self, identifier: str):
@@ -176,15 +174,25 @@ class ApplicationBundle(_FilesystemDictionary):
             sys.exit(1)
         self.plist_dict.update(CFBundleIdentifier=identifier)
 
+    def set_destination(self, destination: str) -> None:
+        """Set the destination of the bundle."""
+        if destination == "executable":
+            self.destination = self.original.parent
+        elif destination == "system":
+            self.destination = Path ("/Applications")
+        elif destination == "user":
+            self.destination = Path.home() / "Applications"
+
     def write_bundle(self) -> Path:
-        # Delete possible old version
-        if self.destination.exists():
-            shutil.rmtree(self.destination)
+        destination =  self.destination / Path(str(self.executable) + ".app")
+        if destination.exists():
+            shutil.rmtree(destination)
         plist = plistlib.dumps(self.plist_dict)
         self.save_file(Path("Contents") / Path("Info.plist"), plist)
-        self.write_all_to_disk(self.destination)
-        os.chmod(self.destination / self.executable, 0o755)
-        return self.destination
+        self.write_all_to_disk(destination)
+        executable = destination / Path("Contents") / Path("MacOS") / self.executable
+        os.chmod(executable, 0o755)
+        return destination
 
     def _is_valid_domain(self, domain):
         """Check the validity of the Uniform Type Identifiers."""
@@ -203,21 +211,6 @@ class ApplicationBundle(_FilesystemDictionary):
     def print(self):
         print(self.directory_dict)
 
-
-
-
-
-def _determine_destination(destination: str, origin: str, filename: str) -> str:
-    """Determine the destination of the bundle."""
-    app_filename = None
-    if destination == "executable":
-        app_filename = os.path.join(origin, filename)
-    elif destination == "system":
-        app_filename = os.path.join("/Applications", filename)
-    elif destination == "user":
-        app_filename = os.path.join(os.path.expanduser("~"), "Applications", filename)
-    assert app_filename is not None
-    return app_filename
 
 
 def do_the_bundle(
@@ -276,12 +269,6 @@ def do_the_bundle(
         app_executable = terminal_filename
         move_file = True
 
-
-    app_filename = _determine_destination(app_destination, head, app_filename)
-
-
-
-
     # Add the optional icon file if requested
     if app_CFBundleIconFile is not None:
         iconsfile = app_CFBundleIconFile + ".icns"
@@ -323,11 +310,6 @@ def do_the_bundle(
         ]
 
         info_plist.update(UTExportedTypeDeclarations=app_UTExportedTypeDeclarations)
-
-    # Write the Info.plist file
-
-
-    return app_filename
 
 
 def _create_argparser():
@@ -463,19 +445,12 @@ def main():
     app_executable = args.executable
     if app_executable is None:
         app_executable = _create_example()
-    # appname = do_the_bundle(
-    #     app_executable,
-    #     app_filename=args.filename,
-    #     app_CFBundleDisplayName=args.CFBundleDisplayName,
-    #     app_destination=args.destination,
-    #     app_CFBundleIconFile=args.CFBundleIconFile,
-    #     app_extension=args.extension,
-    #     app_CFBundleTypeRole=args.CFBundleTypeRole,
-    #     app_terminal=args.terminal,
-    # )
     exec = Path(app_executable)
-
     vfs = ApplicationBundle(exec)
+    if args.destination:
+        vfs.set_destination(args.destination)
+    if args.CFBundleDisplayName:
+        vfs.set_CFBundleDisplayName(args.CFBundleDisplayName)
     appname = vfs.write_bundle()
     # Launch if requested;
     # sleep required to allow the system to recognize the new app
