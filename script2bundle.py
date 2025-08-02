@@ -176,7 +176,7 @@ class ApplicationBundle(_FilesystemDictionary):
             sys.exit(1)
         self.plist_dict.update(CFBundleIdentifier=identifier)
 
-    def write_bundle(self):
+    def write_bundle(self) -> Path:
         # Delete possible old version
         if self.destination.exists():
             shutil.rmtree(self.destination)
@@ -184,6 +184,7 @@ class ApplicationBundle(_FilesystemDictionary):
         self.save_file(Path("Contents") / Path("Info.plist"), plist)
         self.write_all_to_disk(self.destination)
         os.chmod(self.destination / self.executable, 0o755)
+        return self.destination
 
     def _is_valid_domain(self, domain):
         """Check the validity of the Uniform Type Identifiers."""
@@ -475,7 +476,7 @@ def main():
     exec = Path(app_executable)
 
     vfs = ApplicationBundle(exec)
-    vfs.write_bundle()
+    appname = vfs.write_bundle()
     # Launch if requested;
     # sleep required to allow the system to recognize the new app
     if args.launch:
