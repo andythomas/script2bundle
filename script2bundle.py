@@ -25,8 +25,8 @@ import sys
 import time
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Union
 from tempfile import NamedTemporaryFile
+from typing import Union
 
 import icnsutil
 
@@ -162,7 +162,7 @@ class ApplicationBundle(_FilesystemDictionary):
         self.save_file(Path("Contents") / Path("MacOS") / self.clean_executable, script)
         self.plist_dict = dict(CFBundleExecutable=self.clean_executable)
         self.plist_dict.update(CFBundlePackageType="APPL")
-        self.set_CFBundleDisplayName(self.clean_executable)
+        self.set_CFBundleDisplayName(self.clean_executable + ".app")
         self.set_CFBundleIdentifier(self.clean_executable)
         self.CFBundleTypeRole = "Viewer"
 
@@ -184,7 +184,7 @@ class ApplicationBundle(_FilesystemDictionary):
         if destination == "executable":
             self.destination = self.original_path
         elif destination == "system":
-            self.destination = Path ("/Applications")
+            self.destination = Path("/Applications")
         elif destination == "user":
             self.destination = Path.home() / "Applications"
 
@@ -232,7 +232,7 @@ class ApplicationBundle(_FilesystemDictionary):
         self.CFBundleTypeRole = role
 
     def write_bundle(self) -> Path:
-        destination =  self.destination / Path(self.filename)
+        destination = self.destination / Path(self.filename)
         if destination.exists():
             shutil.rmtree(destination)
         plist = plistlib.dumps(self.plist_dict)
@@ -392,9 +392,7 @@ def main():
     exec = Path(app_executable)
 
     if args.terminal:
-        terminal_script = (
-            f"#!/bin/bash\n/usr/bin/open '{exec.resolve()}' -a Terminal"
-        )
+        terminal_script = f"#!/bin/bash\n/usr/bin/open '{exec.resolve()}' -a Terminal"
         terminal_filename = LAUNCHER_NAME
         if Path(terminal_filename).exists():
             print(f"{terminal_filename} already exists.")
@@ -409,6 +407,8 @@ def main():
         vfs.set_destination(args.destination)
     if args.filename:
         vfs.set_filename(args.filename)
+    else:
+        vfs.set_filename(app_executable)
     if args.CFBundleDisplayName:
         vfs.set_CFBundleDisplayName(args.CFBundleDisplayName)
     if args.CFBundleIconFile:
