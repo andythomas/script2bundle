@@ -163,6 +163,7 @@ def test_launch() -> None:
     delete_bundle(file)
 
 
+@pytest.mark.ci
 def test_filename() -> None:
     """Test the bundle with a custom filename."""
     characters = string.ascii_letters + string.digits
@@ -179,6 +180,7 @@ def test_filename() -> None:
     delete_bundle(file)
 
 
+@pytest.mark.ci
 def test_icon() -> None:
     """Test the bundle with a custom filename."""
     name = "icon"
@@ -204,6 +206,7 @@ def test_icon() -> None:
 destinations = ["user", "system"]
 
 
+@pytest.mark.ci
 @pytest.mark.parametrize("destination", destinations)
 def test_destination(destination: str) -> None:
     """
@@ -235,6 +238,7 @@ def test_destination(destination: str) -> None:
     delete_bundle(file)
 
 
+@pytest.mark.ci
 def test_displayname() -> None:
     """Test the bundle with a custom display name."""
     file = Path("example.app")
@@ -252,6 +256,7 @@ def test_displayname() -> None:
     delete_bundle(file)
 
 
+@pytest.mark.ci
 def test_extension() -> None:
     """Test the bundle with a connected file extension."""
     name = "example"
@@ -290,6 +295,7 @@ def test_extension() -> None:
 types = ["Editor", "Shell", "None"]
 
 
+@pytest.mark.ci
 @pytest.mark.parametrize("type_role", types)
 def test_type_role(type_role: str) -> None:
     """
