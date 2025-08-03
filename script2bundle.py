@@ -464,6 +464,17 @@ def _create_example() -> str:
     return executable
 
 
+def _create_launcher(executable: Path) -> Path:
+    """Create an launcher file and return its filename."""
+    terminal_script = f"#!/bin/bash\n/usr/bin/open '{executable.resolve()}' -a Terminal"
+    terminal_filename = LAUNCHER_NAME
+    with open(terminal_filename, "w") as terminal_file:
+        terminal_file.write(terminal_script)
+    os.chmod(terminal_filename, 0o755)
+    executable = Path(terminal_filename)
+    return executable
+
+
 def main():
     """Parse the command line and run the app."""
     args = _create_argparser()
@@ -471,18 +482,8 @@ def main():
     if app_executable is None:
         app_executable = _create_example()
     executable = Path(app_executable)
-
     if args.terminal:
-        terminal_script = f"#!/bin/bash\n/usr/bin/open '{executable.resolve()}' -a Terminal"
-        terminal_filename = LAUNCHER_NAME
-        if Path(terminal_filename).exists():
-            print(f"{terminal_filename} already exists.")
-            sys.exit(1)
-        with open(terminal_filename, "w") as terminal_file:
-            terminal_file.write(terminal_script)
-        os.chmod(terminal_filename, 0o755)
-        executable = Path(terminal_filename)
-
+        executable = _create_launcher(executable)
     vfs = ApplicationBundle(executable)
     if args.destination:
         vfs.set_destination(args.destination)
@@ -499,8 +500,6 @@ def main():
     if args.extension:
         vfs.set_extension(args.extension)
     appname = vfs.write_bundle()
-    if args.terminal:
-        os.remove(executable)
     # Launch if requested;
     # sleep required to allow the system to recognize the new app
     if args.launch:

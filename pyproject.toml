@@ -19,7 +19,7 @@ homepage = "https://github.com/andythomas/script2bundle"
 line-length = 99 # max per pep8
 
 [tool.ruff.lint]
-extend-select = ["D", "A", "I", "PLW0602", "W505"]
+extend-select = ["D", "A", "I", "PLW0602", "W505", "C901"]
 
 [tool.ruff.lint.pycodestyle]
 max-line-length = 100
