@@ -27,8 +27,7 @@ jobs:
         id: titlecheck
         continue-on-error: true
         run: >
-          grep -qP --
-          '^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)((.+))?:\s.+'
+          grep -qE '^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)(\([^)]+\))?:[[:space:]].+'
           <<< '${{ github.event.pull_request.title }}'
       - name: Install pip packages
         run: |
