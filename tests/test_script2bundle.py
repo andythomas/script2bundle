@@ -144,8 +144,13 @@ def test_without_parameters() -> None:
     file = Path(name + ".app")
     bundle(command_list, file)
     open_app(file)
-    kill_app(name)
-    delete_bundle(file)
+    command_list = [
+        "ps",
+        "aux",
+    ]
+    subprocess.run(command_list, check=True)
+    #kill_app(name)
+    #delete_bundle(file)
 
 
 def test_launch() -> None:

@@ -51,8 +51,7 @@ jobs:
         run: >
           ruff check .
       - name: Check package with pytest
-        run: |
-          ps aux
+        run: >
           pytest -vs tests -k test_without_parameters
       - name: Create pull request
         if: >
