@@ -1,6 +1,7 @@
 # the generated applications bundles and example file
 *.app
 example
+terminallauncher
 __pycache__/
 dist/
 .pytest_cache
