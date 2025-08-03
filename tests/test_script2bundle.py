@@ -146,14 +146,14 @@ def test_without_parameters(cirunner) -> None:
     file = Path(name + ".app")
     bundle(command_list, file)
     open_app(file)
-    command_list = [
-        "ps",
-        "aux",
-        "|",
-        "grep",
-        "_temp"
-    ]
-    subprocess.run(command_list, check=True)
+    result = subprocess.run(
+        "ps aux | grep _temp",
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+
+    print(result.stdout)
     kill_app(cirunner, name)
     delete_bundle(file)
 
