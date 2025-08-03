@@ -149,6 +149,9 @@ def test_without_parameters(cirunner) -> None:
     command_list = [
         "ps",
         "aux",
+        "|",
+        "grep",
+        "_temp"
     ]
     subprocess.run(command_list, check=True)
     kill_app(cirunner, name)
