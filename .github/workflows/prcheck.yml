@@ -31,8 +31,9 @@ jobs:
           '^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)((.+))?:\s.+'
           <<< '${{ github.event.pull_request.title }}'
       - name: Install ruff and pytest
-        run: >
+        run: |
           python -m pip install ruff pytest
+          python -m pip install .
       - name: Format code with ruff
         run: >
           ruff format .
