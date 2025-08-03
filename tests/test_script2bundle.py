@@ -42,7 +42,7 @@ def open_app(file: Path) -> None:
     """
     completed_process = subprocess.run(["Open", file])
     assert completed_process.returncode == 0
-    time.sleep(3)
+    time.sleep(2)
 
 
 def kill_app(name: str) -> None:
@@ -130,7 +130,7 @@ def bundle(command_list: List[str], file: Path) -> None:
     assert completed_process.returncode == 0
     example_app = file
     assert example_app.exists()
-    time.sleep(2)
+    time.sleep(1)
 
 
 def test_without_parameters() -> None:
