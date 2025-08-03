@@ -45,7 +45,7 @@ def open_app(file: Path) -> None:
     time.sleep(2)
 
 
-def kill_app(name: str) -> None:
+def kill_app(ci: bool, name: str) -> None:
     """
     Kill the application.
 
@@ -54,6 +54,8 @@ def kill_app(name: str) -> None:
     name : str
         The process name to be killed.
     """
+    if ci:
+        name = "_temp"
     command_list = [
         "pkill",
         "-f",
@@ -133,7 +135,7 @@ def bundle(command_list: List[str], file: Path) -> None:
     time.sleep(1)
 
 
-def test_without_parameters() -> None:
+def test_without_parameters(cirunner) -> None:
     """Test the bundle with the example file."""
     name = "example"
     command_list = [
@@ -149,8 +151,8 @@ def test_without_parameters() -> None:
         "aux",
     ]
     subprocess.run(command_list, check=True)
-    #kill_app(name)
-    #delete_bundle(file)
+    kill_app(cirunner, name)
+    delete_bundle(file)
 
 
 def test_launch() -> None:
