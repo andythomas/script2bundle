@@ -256,7 +256,6 @@ def test_displayname() -> None:
     delete_bundle(file)
 
 
-@pytest.mark.ci
 def test_extension() -> None:
     """Test the bundle with a connected file extension."""
     name = "example"
