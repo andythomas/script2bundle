@@ -149,8 +149,8 @@ def test_without_parameters() -> None:
         "aux",
     ]
     subprocess.run(command_list, check=True)
-    #kill_app(name)
-    #delete_bundle(file)
+    # kill_app(name)
+    # delete_bundle(file)
 
 
 def test_launch() -> None:
