@@ -30,9 +30,9 @@ jobs:
           grep -qP --
           '^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)((.+))?:\s.+'
           <<< '${{ github.event.pull_request.title }}'
-      - name: Install ruff
+      - name: Install ruff and pytest
         run: >
-          python -m pip install ruff
+          python -m pip install ruff pytest
       - name: Format code with ruff
         run: >
           ruff format .
@@ -50,6 +50,9 @@ jobs:
       - name: Test for unresolved issues
         run: >
           ruff check .
+      - name: Check package with pytest
+        run: >
+          pytest -vs tests
       - name: Create pull request
         if: >
           steps.ruff.outcome == 'failure'
