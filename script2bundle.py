@@ -166,21 +166,56 @@ class ApplicationBundle(_FilesystemDictionary):
         self.set_CFBundleIdentifier(self.clean_executable)
         self.CFBundleTypeRole = "Viewer"
 
-    def set_CFBundleDisplayName(self, name: str):
+    def set_CFBundleDisplayName(self, name: str) -> None:
+        """
+        Set the 'official' name of the app used by, e.g., Siri.
+
+        Paramters
+        ---------
+        name : str
+            The name to be given.
+        """
         self.plist_dict.update(CFBundleDisplayName=name)
 
-    def set_CFBundleIdentifier(self, identifier: str):
+    def set_CFBundleIdentifier(self, identifier: str) -> None:
+        """
+        Set the reverse domain name identifier for the app.
+
+        A pseudo domain identifier is used. If the identifier would be
+        'myapplication' -> 'org.script2bundle.myapplication'.
+
+        Parameters
+        ----------
+        identifier : str
+            The last part of that identifier adhering to RFC 1035.
+        """
         identifier = "org.script2bundle." + identifier
         if not self._is_valid_domain(identifier):
             print(f"{identifier} is not a valid domain name as set forth in RFC 1035.")
             sys.exit(1)
         self.plist_dict.update(CFBundleIdentifier=identifier)
 
-    def set_filename(self, name):
+    def set_filename(self, name: str) -> None:
+        """
+        Set the filename of the application.
+
+        Parameters
+        ----------
+        name : str
+            The filename without '.app'.
+        """
         self.filename = name + ".app"
 
     def set_destination(self, destination: str) -> None:
-        """Set the destination of the bundle."""
+        """
+        Set the destination of the bundle.
+
+        Parameters
+        ----------
+        destination : str
+            Can be 'executable' (same as input file), 'user'
+            (~/Applications) or 'system (/Applications).
+        """
         if destination == "executable":
             self.destination = self.original_path
         elif destination == "system":
@@ -188,7 +223,13 @@ class ApplicationBundle(_FilesystemDictionary):
         elif destination == "user":
             self.destination = Path.home() / "Applications"
 
-    def set_icon(self, icon: Path):
+    def set_icon(self, icon: Path) -> None:
+        """
+        Set the icon for the app.
+
+        icon : Path
+            The directory and filename of the icon in 'png' format.
+        """
         # if icon.name[-4:] == ".png":
         #      iconsfile = Path(icon.name[:-4] + ".icns")
         # else:
@@ -202,7 +243,19 @@ class ApplicationBundle(_FilesystemDictionary):
         self.save_file(Path("Contents") / Path("Resources") / iconsfile, icns_bytes)
         self.plist_dict.update(CFBundleIconFile=iconsfile.name)
 
-    def set_extension(self, extension: str):
+    def set_extension(self, extension: str) -> None:
+        """
+        Associate a file extension with the application.
+
+        Then, a double-click or 'open' on a file with that extension
+        will subsequently launch the application. The application has to
+        run at least once to 'register' the extension with the system.
+
+        Parameters
+        ----------
+        extension : str
+            ZThe extension with the preceeding period.
+        """
         self.extension = extension
         app_CFBundleIdentifier = self.plist_dict["CFBundleIdentifier"]
         UTTypeIdentifier = app_CFBundleIdentifier + ".datafile"
@@ -229,9 +282,25 @@ class ApplicationBundle(_FilesystemDictionary):
         self.plist_dict.update(UTExportedTypeDeclarations=app_UTExportedTypeDeclarations)
 
     def set_CFBundleTypeRole(self, role: str):
+        """
+        Set the bundle type role.
+
+        Parameters
+        ----------
+        role : str
+            Can be 'Viewer','Editor','Shell', or 'None'.
+        """
         self.CFBundleTypeRole = role
 
     def write_bundle(self) -> Path:
+        """
+        Write the bundle to the disk.
+
+        Returns
+        -------
+        Path
+            The path and filename of the application bundle.
+        """
         destination = self.destination / Path(self.filename)
         if destination.exists():
             shutil.rmtree(destination)
@@ -242,8 +311,20 @@ class ApplicationBundle(_FilesystemDictionary):
         os.chmod(executable, 0o755)
         return destination
 
-    def _is_valid_domain(self, domain):
-        """Check the validity of the Uniform Type Identifiers."""
+    def _is_valid_domain(self, domain: str) -> bool:
+        """
+        Check the validity of the Uniform Type Identifiers.
+
+        Parameters
+        ----------
+        domain : str
+            The domain name to be checked.
+
+        Returns
+        -------
+        bool
+            True if the domain is valid (RFC1035) and False otherwise.
+        """
         rfc1035_chars = string.ascii_lowercase + string.digits + "-."
         if not all(char in rfc1035_chars for char in domain.lower()):
             return False
@@ -389,10 +470,10 @@ def main():
     app_executable = args.executable
     if app_executable is None:
         app_executable = _create_example()
-    exec = Path(app_executable)
+    executable = Path(app_executable)
 
     if args.terminal:
-        terminal_script = f"#!/bin/bash\n/usr/bin/open '{exec.resolve()}' -a Terminal"
+        terminal_script = f"#!/bin/bash\n/usr/bin/open '{executable.resolve()}' -a Terminal"
         terminal_filename = LAUNCHER_NAME
         if Path(terminal_filename).exists():
             print(f"{terminal_filename} already exists.")
@@ -400,9 +481,9 @@ def main():
         with open(terminal_filename, "w") as terminal_file:
             terminal_file.write(terminal_script)
         os.chmod(terminal_filename, 0o755)
-        exec = Path(terminal_filename)
+        executable = Path(terminal_filename)
 
-    vfs = ApplicationBundle(exec)
+    vfs = ApplicationBundle(executable)
     if args.destination:
         vfs.set_destination(args.destination)
     if args.filename:
@@ -419,7 +500,7 @@ def main():
         vfs.set_extension(args.extension)
     appname = vfs.write_bundle()
     if args.terminal:
-        os.remove(exec)
+        os.remove(executable)
     # Launch if requested;
     # sleep required to allow the system to recognize the new app
     if args.launch:
