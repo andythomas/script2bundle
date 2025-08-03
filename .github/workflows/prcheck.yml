@@ -52,7 +52,7 @@ jobs:
           ruff check .
       - name: Check package with pytest
         run: >
-          pytest -vs tests -m ci
+          pytest -vs tests -k test_without_parameters
       - name: Create pull request
         if: >
           steps.ruff.outcome == 'failure'
