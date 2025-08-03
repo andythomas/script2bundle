@@ -16,7 +16,7 @@ jobs:
     if: >
       startsWith(github.head_ref, 'ruff-patches') == false &&
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: check the pull request (branch) out
         uses: actions/checkout@v4
@@ -30,9 +30,9 @@ jobs:
           grep -qP --
           '^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)((.+))?:\s.+'
           <<< '${{ github.event.pull_request.title }}'
-      - name: Install ruff and pytest
+      - name: Install pip packages
         run: |
-          python -m pip install ruff pytest
+          python -m pip install ruff pytest PyQt6 pyobjc
           python -m pip install .
       - name: Format code with ruff
         run: >
