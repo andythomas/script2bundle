@@ -52,6 +52,8 @@ def kill_app(ci: bool, name: str) -> None:
 
     Parameters
     ----------
+    ci: bool
+        Run on Github ci (True) or locally (False)
     name : str
         The process name to be killed.
     """
@@ -165,7 +167,7 @@ def test_without_parameters(cirunner) -> None:
     delete_bundle(file)
 
 
-def test_launch() -> None:
+def test_launch(cirunner) -> None:
     """Test the auto-open."""
     name = "example"
     command_list = [
@@ -176,7 +178,7 @@ def test_launch() -> None:
     ]
     file = Path(name + ".app")
     bundle(command_list, file)
-    kill_app(name)
+    kill_app(cirunner, name)
     delete_bundle(file)
 
 
@@ -273,7 +275,7 @@ def test_displayname() -> None:
     delete_bundle(file)
 
 
-def test_extension() -> None:
+def test_extension(cirunner) -> None:
     """Test the bundle with a connected file extension."""
     name = "example"
     file = Path(name + ".app")
@@ -288,11 +290,11 @@ def test_extension() -> None:
     file_with_extension = Path(name + "." + extension)
     bundle(command_list, file)
     open_app(file)
-    kill_app(name)
+    kill_app(cirunner, name)
     with open(file_with_extension, "w") as test_file:
         test_file.write(".")
     open_app(file_with_extension)
-    kill_app(name)
+    kill_app(cirunner, name)
     plist = get_plist(file)
     entry1 = plist["CFBundleDocumentTypes"][0]
     datafile = str(file) + " datafile"
@@ -340,7 +342,7 @@ def test_type_role(type_role: str) -> None:
     delete_bundle(file)
 
 
-def test_terminal() -> None:
+def test_terminal(cirunner) -> None:
     """Test the launch via a terminal."""
     name = "example"
     command_list = [
@@ -355,13 +357,13 @@ def test_terminal() -> None:
     open_app(file)
     after = count_terminal_windows()
     assert after == before + 1
-    kill_app(name)
+    kill_app(cirunner, name)
     # close_last_terminal_window()
     # This does not work if pytest is also called via the command line
     delete_bundle(file)
 
 
-def test_executable() -> None:
+def test_executable(cirunner) -> None:
     """Test to wrap another executable."""
     name = "s2btest"
     with open(name, "w") as examplefile:
@@ -377,6 +379,6 @@ def test_executable() -> None:
     ]
     bundle(command_list, file)
     open_app(file)
-    kill_app(name)
+    kill_app(cirunner, name)
     delete_bundle(file)
     os.remove(name)
