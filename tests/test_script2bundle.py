@@ -56,9 +56,7 @@ def kill_app(ci: bool, name: str) -> None:
         The process name to be killed.
     """
     if ci:
-        result = subprocess.run(
-            "ps -ax -o pid,comm | grep _temp", shell=True, capture_output=True, text=True
-        )
+        result = subprocess.run("ps -ax -o pid,comm", shell=True, capture_output=True, text=True)
         processes = result.stdout
         print(processes)
         # This is a hack trying to match the sandboxed
