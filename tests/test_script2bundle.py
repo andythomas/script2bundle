@@ -60,7 +60,6 @@ def kill_app(ci: bool, name: str) -> None:
             "ps -ax -o pid,command | grep _temp", shell=True, capture_output=True, text=True
         )
         processes = result.stdout
-        print(">" + processes + "<")
         # This is a hack trying to match the sandboxed process on
         # Github Actions looking for a UUID
         pattern = r"(\d+)(.*)\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh"
@@ -70,19 +69,18 @@ def kill_app(ci: bool, name: str) -> None:
         else:
             pid = None
         assert pid is not None
-        print("(" + str(pid) + ")")
         command_list = ["kill", pid]
+        error_codes = [0, 143]
     else:
         command_list = [
             "pgrep",
             "-f",
             name,
         ]
-    completed_process = subprocess.run(command_list, check=True)
-    print(completed_process)
-    result = subprocess.run("ps aux | grep _temp", shell=True, capture_output=True, text=True)
-    processes = result.stdout
-    print(processes)
+        error_codes = [0]
+    completed_process = subprocess.run(command_list, check=False)
+    if completed_process.returncode not in error_codes:
+        raise RuntimeError("Bundle did not properly terminate.")
 
 
 def delete_bundle(file: Path) -> None:
