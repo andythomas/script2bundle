@@ -61,7 +61,7 @@ def kill_app(ci: bool, name: str) -> None:
         print(processes)
         # This is a hack trying to match the sandboxed
         # process on Github Actions
-        pattern = r"^(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh$"
+        pattern = r"\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh$"
         match = match = re.search(pattern, processes)
         if match:
             name = match.group(0)
