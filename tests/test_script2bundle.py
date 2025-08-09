@@ -72,20 +72,17 @@ def kill_app(ci: bool, name: str) -> None:
         assert pid is not None
         print("(" + str(pid) + ")")
         command_list = ["kill", pid]
-        exit_code = 143
     else:
         command_list = [
             "pgrep",
             "-f",
             name,
         ]
-        exit_code = 0
     completed_process = subprocess.run(command_list, check=True)
     print(completed_process)
     result = subprocess.run("ps aux | grep _temp", shell=True, capture_output=True, text=True)
     processes = result.stdout
     print(processes)
-    assert completed_process.returncode == exit_code
 
 
 def delete_bundle(file: Path) -> None:
