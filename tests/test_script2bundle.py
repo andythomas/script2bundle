@@ -61,7 +61,7 @@ def kill_app(ci: bool, name: str) -> None:
         )
         processes = result.stdout
         # This is a hack trying to match the sandboxed process on
-        # Github Actions looking for a UUID
+        # Github Actions looking for an UUID
         pattern = r"(\d+)(.*)\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh"
         match = re.search(pattern, processes)
         if match:
@@ -79,8 +79,7 @@ def kill_app(ci: bool, name: str) -> None:
         ]
         error_codes = [0]
     completed_process = subprocess.run(command_list, check=False)
-    if completed_process.returncode not in error_codes:
-        raise RuntimeError("Bundle did not properly terminate.")
+    assert completed_process.returncode in error_codes
 
 
 def delete_bundle(file: Path) -> None:
