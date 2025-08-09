@@ -152,6 +152,7 @@ def bundle(command_list: List[str], file: Path) -> None:
     time.sleep(1)
 
 
+@pytest.mark.ci
 def test_without_parameters(cirunner) -> None:
     """Test the bundle with the example file."""
     name = "example"
@@ -167,6 +168,7 @@ def test_without_parameters(cirunner) -> None:
     delete_bundle(file)
 
 
+@pytest.mark.ci
 def test_launch(cirunner) -> None:
     """Test the auto-open."""
     name = "example"
@@ -275,6 +277,7 @@ def test_displayname() -> None:
     delete_bundle(file)
 
 
+@pytest.mark.ci
 def test_extension(cirunner) -> None:
     """Test the bundle with a connected file extension."""
     name = "example"
@@ -363,6 +366,7 @@ def test_terminal(cirunner) -> None:
     delete_bundle(file)
 
 
+@pytest.mark.ci
 def test_executable(cirunner) -> None:
     """Test to wrap another executable."""
     name = "s2btest"
