@@ -80,7 +80,7 @@ def kill_app(ci: bool, name: str) -> None:
             name,
         ]
         exit_code = 0
-    completed_process = subprocess.run(command_list, check=False)
+    completed_process = subprocess.run(command_list, check=True)
     print(completed_process)
     result = subprocess.run("ps aux | grep _temp", shell=True, capture_output=True, text=True)
     processes = result.stdout
