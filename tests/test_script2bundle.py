@@ -74,7 +74,7 @@ def kill_app(ci: bool, name: str) -> None:
         command_list = ["kill", "-s", "QUIT", pid]
     else:
         command_list = [
-            "pgrep",
+            "pkill",
             "-f",
             name,
         ]
