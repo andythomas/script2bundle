@@ -307,8 +307,8 @@ class ApplicationBundle(_FilesystemDictionary):
         plist = plistlib.dumps(self.plist_dict)
         self.save_file(Path("Contents") / Path("Info.plist"), plist)
         self.write_all_to_disk(destination)
-        executable = destination / Path("Contents") / Path("MacOS") / self.clean_executable
-        os.chmod(executable, 0o755)
+        executable = destination / Path("Contents") / Path("MacOS") / self.clean_executable  # noqa
+        # os.chmod(executable, 0o755)
         return destination
 
     def _is_valid_domain(self, domain: str) -> bool:
