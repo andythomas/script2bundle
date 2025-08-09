@@ -5,6 +5,9 @@ readme = "readme.md"
 version = "0.3.0"
 dependencies = ["icnsutil"]
 
+[dependency-groups]
+dev = ["pyobjc>=11.1", "pyqt6>=6.9.1", "pytest>=8.4.1"]
+
 [project.scripts]
 script2bundle = "script2bundle:main"
 
@@ -16,9 +19,7 @@ requires = ["flit_core >=3.2,<4"]
 homepage = "https://github.com/andythomas/script2bundle"
 
 [tool.pytest.ini_options]
-markers = [
-    "ci: tests that run on github",
-]
+markers = ["ci: tests that run on github"]
 
 [tool.ruff]
 line-length = 99 # max per pep8

@@ -30,6 +30,8 @@ jobs:
           grep -qE '^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)(\([^)]+\))?:[[:space:]].+'
           <<< '${{ github.event.pull_request.title }}'
       - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.12.8"
       - name: Auto-fix code with ruff
         run: ruff check --fix-only
       - name: Format code with ruff
@@ -55,16 +57,6 @@ jobs:
           labels: ruff, automated pr
           branch: "ruff-patches/${{ github.head_ref }}"
           base: ${{ github.head_ref }}
-
-      - name: Install pip packages
-        run: |
-          python -m pip install ruff pytest PyQt6 pyobjc
-          python -m pip install .
-
-      - name: Check package with pytest
-        run: >
-          pytest -vs tests -m ci --cirunner
-
       - name: Fail if ruff made changes and print explanantion
         if: >
           steps.ruff.outcome == 'failure'
@@ -89,3 +81,7 @@ jobs:
           echo ${{ env.ERROR2 }}
           echo "Please click the left Summary tab for more information."
           exit 1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Check package with pytest
+        run: uv run pytest -vs tests -m ci --cirunner
