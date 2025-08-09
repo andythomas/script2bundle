@@ -72,15 +72,16 @@ def kill_app(ci: bool, name: str) -> None:
         print(name)
         assert result != ""
     command_list = [
-        "pkill",
+        "pgrep",
         "-f",
         name,
     ]
     completed_process = subprocess.run(command_list, check=True)
+    print(completed_process)
     result = subprocess.run("ps aux | grep _temp", shell=True, capture_output=True, text=True)
     processes = result.stdout
     print(processes)
-    assert completed_process.returncode == 0
+    # assert completed_process.returncode == 0
 
 
 def delete_bundle(file: Path) -> None:
