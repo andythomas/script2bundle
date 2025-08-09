@@ -78,7 +78,7 @@ def kill_app(ci: bool, name: str) -> None:
             name,
         ]
         error_codes = [0]
-    completed_process = subprocess.run(command_list, check=False)
+    completed_process = subprocess.run(command_list, check=False, start_new_session=True)
     print(f"Completed with: {completed_process.returncode}")
     assert completed_process.returncode in error_codes
     print("Assertion passed")
