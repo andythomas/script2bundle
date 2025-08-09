@@ -41,7 +41,7 @@ def open_app(file: Path) -> None:
     file : Path
         The app or file with linked extension to be opened.
     """
-    completed_process = subprocess.run(["Open", file])
+    completed_process = subprocess.run(["Open", file], start_new_session=True)
     assert completed_process.returncode == 0
     time.sleep(2)
 
