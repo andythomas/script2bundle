@@ -43,7 +43,7 @@ def open_app(file: Path) -> None:
     """
     completed_process = subprocess.run(["Open", file])
     assert completed_process.returncode == 0
-    time.sleep(2)
+    time.sleep(2)  # Give app time to open
 
 
 def kill_app(ci: bool, name: str) -> None:
@@ -102,6 +102,11 @@ def get_plist(app: Path) -> dict:
     ----------
     app : Path
         The application from which the plist is extracted.
+
+    Returns
+    -------
+    dict
+        The plist entries as a dictionary.
     """
     plist_file = Path(app) / "Contents" / "Info.plist"
     with open(plist_file, "rb") as input_file:
@@ -111,7 +116,14 @@ def get_plist(app: Path) -> dict:
 
 
 def count_terminal_windows() -> int:
-    """Count the open Terminal windows."""
+    """
+    Count the open Terminal windows.
+
+    Returns
+    -------
+    int
+        The number of open terminal windows.
+    """
     completed_process = subprocess.run(
         ["osascript", "-e", 'tell application "Terminal" to count windows'],
         stdout=subprocess.PIPE,
@@ -149,12 +161,18 @@ def bundle(command_list: List[str], file: Path) -> None:
     assert completed_process.returncode == 0
     example_app = file
     assert example_app.exists()
-    time.sleep(1)
 
 
 @pytest.mark.ci
-def test_without_parameters(cirunner) -> None:
-    """Test the bundle with the example file."""
+def test_without_parameters(cirunner: bool) -> None:
+    """
+    Test the bundle with the example file.
+
+    Parameters
+    ----------
+    cirunner: bool
+        Test was started from Github action.
+    """
     name = "example"
     command_list = [
         python_executable,
@@ -169,8 +187,15 @@ def test_without_parameters(cirunner) -> None:
 
 
 @pytest.mark.ci
-def test_launch(cirunner) -> None:
-    """Test the auto-open."""
+def test_launch(cirunner: bool) -> None:
+    """
+    Test the auto-open.
+
+    Parameters
+    ----------
+    cirunner: bool
+        Test was started from Github action.
+    """
     name = "example"
     command_list = [
         python_executable,
@@ -278,8 +303,15 @@ def test_displayname() -> None:
 
 
 @pytest.mark.ci
-def test_extension(cirunner) -> None:
-    """Test the bundle with a connected file extension."""
+def test_extension(cirunner: bool) -> None:
+    """
+    Test the bundle with a connected file extension.
+
+    Parameters
+    ----------
+    cirunner: bool
+        Test was started from Github action.
+    """
     name = "example"
     file = Path(name + ".app")
     extension = "s2bfile"
@@ -363,12 +395,20 @@ def test_terminal() -> None:
     kill_app(False, name)
     # close_last_terminal_window()
     # This does not work if pytest is also called via the command line
+    # and consequently skipped
     delete_bundle(file)
 
 
 @pytest.mark.ci
-def test_executable(cirunner) -> None:
-    """Test to wrap another executable."""
+def test_executable(cirunner: bool) -> None:
+    """
+    Test to wrap another executable.
+
+    Parameters
+    ----------
+    cirunner: bool
+        Test was started from Github action.
+    """
     name = "s2btest"
     with open(name, "w") as examplefile:
         examplefile.write(minimal_file)
