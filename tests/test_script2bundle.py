@@ -345,7 +345,7 @@ def test_type_role(type_role: str) -> None:
     delete_bundle(file)
 
 
-def test_terminal(cirunner) -> None:
+def test_terminal() -> None:
     """Test the launch via a terminal."""
     name = "example"
     command_list = [
@@ -360,7 +360,7 @@ def test_terminal(cirunner) -> None:
     open_app(file)
     after = count_terminal_windows()
     assert after == before + 1
-    kill_app(cirunner, name)
+    kill_app(False, name)
     # close_last_terminal_window()
     # This does not work if pytest is also called via the command line
     delete_bundle(file)
