@@ -66,7 +66,7 @@ def kill_app(ci: bool, name: str) -> None:
         pattern = r"(\d+)(.*)\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh"
         match = re.search(pattern, processes)
         if match:
-            pid = match.group(0)
+            pid = match.group(1)
         else:
             pid = None
         print("(" + str(pid) + ")")
