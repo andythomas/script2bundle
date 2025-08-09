@@ -69,7 +69,7 @@ def kill_app(ci: bool, name: str) -> None:
             pid = match.group(0)
         else:
             pid = None
-        print(pid)
+        print("(" + str(pid) + ")")
         # assert result != ""
     # command_list = [
     #     "pgrep",
