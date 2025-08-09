@@ -3,6 +3,7 @@
 import os
 import plistlib
 import random
+import re
 import shutil
 import string
 import subprocess
@@ -42,24 +43,42 @@ def open_app(file: Path) -> None:
     """
     completed_process = subprocess.run(["Open", file])
     assert completed_process.returncode == 0
-    time.sleep(2)
+    time.sleep(2)  # Give app time to open
 
 
-def kill_app(name: str) -> None:
+def kill_app(ci: bool, name: str) -> None:
     """
     Kill the application.
 
     Parameters
     ----------
+    ci: bool
+        Run on Github ci (True) or locally (False)
     name : str
         The process name to be killed.
     """
-    command_list = [
-        "pkill",
-        "-f",
-        name,
-    ]
-    completed_process = subprocess.run(command_list, check=True)
+    if ci:
+        result = subprocess.run(
+            "ps -ax -o pid,command | grep _temp", shell=True, capture_output=True, text=True
+        )
+        processes = result.stdout
+        # This is a hack trying to match the sandboxed process on
+        # Github Actions looking for an UUID
+        pattern = r"(\d+)(.*)\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh"
+        match = re.search(pattern, processes)
+        if match:
+            pid = match.group(1)
+        else:
+            pid = None
+        assert pid is not None
+        command_list = ["kill", "-s", "QUIT", pid]
+    else:
+        command_list = [
+            "pkill",
+            "-f",
+            name,
+        ]
+    completed_process = subprocess.run(command_list, check=False, start_new_session=True)
     assert completed_process.returncode == 0
 
 
@@ -83,6 +102,11 @@ def get_plist(app: Path) -> dict:
     ----------
     app : Path
         The application from which the plist is extracted.
+
+    Returns
+    -------
+    dict
+        The plist entries as a dictionary.
     """
     plist_file = Path(app) / "Contents" / "Info.plist"
     with open(plist_file, "rb") as input_file:
@@ -92,7 +116,14 @@ def get_plist(app: Path) -> dict:
 
 
 def count_terminal_windows() -> int:
-    """Count the open Terminal windows."""
+    """
+    Count the open Terminal windows.
+
+    Returns
+    -------
+    int
+        The number of open terminal windows.
+    """
     completed_process = subprocess.run(
         ["osascript", "-e", 'tell application "Terminal" to count windows'],
         stdout=subprocess.PIPE,
@@ -130,11 +161,18 @@ def bundle(command_list: List[str], file: Path) -> None:
     assert completed_process.returncode == 0
     example_app = file
     assert example_app.exists()
-    time.sleep(1)
 
 
-def test_without_parameters() -> None:
-    """Test the bundle with the example file."""
+@pytest.mark.ci
+def test_without_parameters(cirunner: bool) -> None:
+    """
+    Test the bundle with the example file.
+
+    Parameters
+    ----------
+    cirunner: bool
+        Test was started from Github action.
+    """
     name = "example"
     command_list = [
         python_executable,
@@ -144,12 +182,20 @@ def test_without_parameters() -> None:
     file = Path(name + ".app")
     bundle(command_list, file)
     open_app(file)
-    kill_app(name)
+    kill_app(cirunner, name)
     delete_bundle(file)
 
 
-def test_launch() -> None:
-    """Test the auto-open."""
+@pytest.mark.ci
+def test_launch(cirunner: bool) -> None:
+    """
+    Test the auto-open.
+
+    Parameters
+    ----------
+    cirunner: bool
+        Test was started from Github action.
+    """
     name = "example"
     command_list = [
         python_executable,
@@ -159,7 +205,7 @@ def test_launch() -> None:
     ]
     file = Path(name + ".app")
     bundle(command_list, file)
-    kill_app(name)
+    kill_app(cirunner, name)
     delete_bundle(file)
 
 
@@ -256,8 +302,16 @@ def test_displayname() -> None:
     delete_bundle(file)
 
 
-def test_extension() -> None:
-    """Test the bundle with a connected file extension."""
+@pytest.mark.ci
+def test_extension(cirunner: bool) -> None:
+    """
+    Test the bundle with a connected file extension.
+
+    Parameters
+    ----------
+    cirunner: bool
+        Test was started from Github action.
+    """
     name = "example"
     file = Path(name + ".app")
     extension = "s2bfile"
@@ -271,11 +325,11 @@ def test_extension() -> None:
     file_with_extension = Path(name + "." + extension)
     bundle(command_list, file)
     open_app(file)
-    kill_app(name)
+    kill_app(cirunner, name)
     with open(file_with_extension, "w") as test_file:
         test_file.write(".")
     open_app(file_with_extension)
-    kill_app(name)
+    kill_app(cirunner, name)
     plist = get_plist(file)
     entry1 = plist["CFBundleDocumentTypes"][0]
     datafile = str(file) + " datafile"
@@ -338,14 +392,23 @@ def test_terminal() -> None:
     open_app(file)
     after = count_terminal_windows()
     assert after == before + 1
-    kill_app(name)
+    kill_app(False, name)
     # close_last_terminal_window()
     # This does not work if pytest is also called via the command line
+    # and consequently skipped
     delete_bundle(file)
 
 
-def test_executable() -> None:
-    """Test to wrap another executable."""
+@pytest.mark.ci
+def test_executable(cirunner: bool) -> None:
+    """
+    Test to wrap another executable.
+
+    Parameters
+    ----------
+    cirunner: bool
+        Test was started from Github action.
+    """
     name = "s2btest"
     with open(name, "w") as examplefile:
         examplefile.write(minimal_file)
@@ -360,6 +423,6 @@ def test_executable() -> None:
     ]
     bundle(command_list, file)
     open_app(file)
-    kill_app(name)
+    kill_app(cirunner, name)
     delete_bundle(file)
     os.remove(name)
