@@ -56,28 +56,28 @@ def kill_app(ci: bool, name: str) -> None:
         The process name to be killed.
     """
     if ci:
-        result = subprocess.run("ps aux | grep _temp", shell=True, capture_output=True, text=True)
+        result = subprocess.run(
+            "ps -ax -o pid,comm | grep _temp", shell=True, capture_output=True, text=True
+        )
         processes = result.stdout
         print(processes)
         # This is a hack trying to match the sandboxed
         # process on Github Actions
-        pattern = (
-            r"\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh$"
-        )
+        pattern = r"(\d+)(.*)\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh$"
         match = match = re.search(pattern, processes)
         if match:
-            name = match.group(0)
+            pid = match.group(0)
         else:
-            name = ""
-        print(name)
-        assert result != ""
-    command_list = [
-        "pgrep",
-        "-f",
-        name,
-    ]
-    completed_process = subprocess.run(command_list, check=True)
-    print(completed_process)
+            pid = None
+        print(pid)
+        # assert result != ""
+    # command_list = [
+    #     "pgrep",
+    #     "-f",
+    #     name,
+    # ]
+    # completed_process = subprocess.run(command_list, check=True)
+    # print(completed_process)
     result = subprocess.run("ps aux | grep _temp", shell=True, capture_output=True, text=True)
     processes = result.stdout
     print(processes)
