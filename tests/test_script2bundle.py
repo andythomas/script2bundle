@@ -69,7 +69,7 @@ def kill_app(ci: bool, name: str) -> None:
         else:
             pid = None
         assert pid is not None
-        command_list = ["kill", pid]
+        command_list = ["kill", "-s", "QUIT", pid]
         error_codes = [0, 143]
     else:
         command_list = [
