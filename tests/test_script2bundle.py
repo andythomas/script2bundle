@@ -57,16 +57,12 @@ def kill_app(ci: bool, name: str) -> None:
     """
     if ci:
         name = "_temp"
-        result = subprocess.run(
-            "ps aux | grep _temp",
-            shell=True,
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run("ps aux | grep _temp", shell=True, capture_output=True, text=True)
         processes = result.stdout
         print(processes)
-        # This is a hack trying to match the sandboxed process on Github Actions
-        pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh$'
+        # This is a hack trying to match the sandboxed
+        # process on Github Actions
+        pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh$"
         match = re.fullmatch(pattern, processes)
         result = match.group(0) if match else None
         print(result)
