@@ -60,11 +60,11 @@ def kill_app(ci: bool, name: str) -> None:
             "ps -ax -o pid,command | grep _temp", shell=True, capture_output=True, text=True
         )
         processes = result.stdout
-        print(processes)
+        print(">" + processes + "<")
         # This is a hack trying to match the sandboxed
         # process on Github Actions
-        pattern = r"(\d+)(.*)\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh$"
-        match = match = re.search(pattern, processes)
+        pattern = r"(\d+)(.*)\/bin\/bash(.*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.sh"
+        match = re.search(pattern, processes)
         if match:
             pid = match.group(0)
         else:
