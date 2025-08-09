@@ -79,7 +79,9 @@ def kill_app(ci: bool, name: str) -> None:
         ]
         error_codes = [0]
     completed_process = subprocess.run(command_list, check=False)
+    print(f"Completed with: {completed_process.returncode}")
     assert completed_process.returncode in error_codes
+    print("Assertion passed")
 
 
 def delete_bundle(file: Path) -> None:
