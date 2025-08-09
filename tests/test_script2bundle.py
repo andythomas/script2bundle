@@ -70,18 +70,14 @@ def kill_app(ci: bool, name: str) -> None:
             pid = None
         assert pid is not None
         command_list = ["kill", "-s", "QUIT", pid]
-        error_codes = [0, 143]
     else:
         command_list = [
             "pgrep",
             "-f",
             name,
         ]
-        error_codes = [0]
     completed_process = subprocess.run(command_list, check=False, start_new_session=True)
-    print(f"Completed with: {completed_process.returncode}")
-    assert completed_process.returncode in error_codes
-    print("Assertion passed")
+    assert completed_process.returncode == 0
 
 
 def delete_bundle(file: Path) -> None:
