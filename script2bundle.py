@@ -23,14 +23,28 @@ import shutil
 import string
 import sys
 import time
-from io import BytesIO
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Union
+from typing import NamedTuple, Optional
 
 import icnsutil
 
 LAUNCHER_NAME = "terminallauncher"
+
+
+class FileEntry(NamedTuple):
+    """
+    Store file contents and permissions in a typed, named tuple.
+
+    content : bytes
+        The content of the file.
+    permissions : str
+        The permissions as an octal string, e.g. '0o755'. None skips to
+        set permissions.
+    """
+
+    content: bytes
+    permissions: Optional[str]
 
 
 class _FilesystemDictionary:
@@ -91,7 +105,7 @@ class _FilesystemDictionary:
         path = self._relative_path(path)
         self._cd(path)
 
-    def save_file(self, file: Path, content: Union[str, bytes]) -> None:
+    def save_file(self, file: Path, content: FileEntry) -> None:
         """
         Save a file with given content.
 
@@ -99,14 +113,12 @@ class _FilesystemDictionary:
         ----------
         file : Path
             The file including its full path and filename.
-        content : str or bytes
-            The content of the file (text or binary).
+        content : FileEntry
+            The content of the file and the desired permissions.
         """
         file = self._relative_path(file)
         dir_ref = self._cd(file.parent)
-        if isinstance(content, str):
-            content = content.encode()
-        dir_ref[file.name] = BytesIO(content)
+        dir_ref[file.name] = content
 
     def write_all_to_disk(self, root: Path) -> None:
         """
@@ -135,9 +147,11 @@ class _FilesystemDictionary:
             full_path = base / Path(name)
             if isinstance(obj, dict):
                 self._write_recursively(full_path, obj)
-            elif isinstance(obj, BytesIO):
+            elif isinstance(obj, FileEntry):
                 with open(full_path, "wb") as f:
-                    f.write(obj.getvalue())
+                    f.write(obj.content)
+                if obj.permissions is not None:
+                    os.chmod(full_path, int(obj.permissions, 8))
 
 
 class ApplicationBundle(_FilesystemDictionary):
@@ -158,7 +172,7 @@ class ApplicationBundle(_FilesystemDictionary):
         self.set_destination("executable")
         self.set_filename(self.clean_executable)
         self.mkdir(Path("Contents") / Path("Resources"))
-        script = Path(executable).read_bytes()
+        script = FileEntry(executable.read_bytes(), oct(executable.stat().st_mode & 0o777))
         self.save_file(Path("Contents") / Path("MacOS") / self.clean_executable, script)
         self.plist_dict = dict(CFBundleExecutable=self.clean_executable)
         self.plist_dict.update(CFBundlePackageType="APPL")
@@ -239,8 +253,8 @@ class ApplicationBundle(_FilesystemDictionary):
         with NamedTemporaryFile(suffix=".icns") as tmp:
             icon_img.write(tmp.name)
             tmp.seek(0)
-            icns_bytes = tmp.read()
-        self.save_file(Path("Contents") / Path("Resources") / iconsfile, icns_bytes)
+            icns = FileEntry(tmp.read(), None)
+        self.save_file(Path("Contents") / Path("Resources") / iconsfile, icns)
         self.plist_dict.update(CFBundleIconFile=iconsfile.name)
 
     def set_extension(self, extension: str) -> None:
@@ -305,10 +319,9 @@ class ApplicationBundle(_FilesystemDictionary):
         if destination.exists():
             shutil.rmtree(destination)
         plist = plistlib.dumps(self.plist_dict)
+        plist = FileEntry(plist, None)
         self.save_file(Path("Contents") / Path("Info.plist"), plist)
         self.write_all_to_disk(destination)
-        executable = destination / Path("Contents") / Path("MacOS") / self.clean_executable
-        os.chmod(executable, 0o755)
         return destination
 
     def _is_valid_domain(self, domain: str) -> bool:
