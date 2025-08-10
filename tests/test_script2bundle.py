@@ -4,7 +4,6 @@ import os
 import plistlib
 import random
 import re
-import shutil
 import string
 import subprocess
 import sys
@@ -80,18 +79,6 @@ def kill_app(ci: bool, name: str) -> None:
         ]
     completed_process = subprocess.run(command_list, check=False, start_new_session=True)
     assert completed_process.returncode == 0
-
-
-def delete_bundle(file: Path) -> None:
-    """
-    Delete the bundle.
-
-    Parameters
-    ----------
-    file : Path
-        The application bundle to be deleted.
-    """
-    shutil.rmtree(file)
 
 
 def get_plist(app: Path) -> dict:
@@ -183,7 +170,6 @@ def test_without_parameters(cirunner: bool) -> None:
     bundle(command_list, file)
     open_app(file)
     kill_app(cirunner, name)
-    delete_bundle(file)
 
 
 @pytest.mark.ci
@@ -206,7 +192,6 @@ def test_launch(cirunner: bool) -> None:
     file = Path(name + ".app")
     bundle(command_list, file)
     kill_app(cirunner, name)
-    delete_bundle(file)
 
 
 @pytest.mark.ci
@@ -223,7 +208,6 @@ def test_filename() -> None:
     ]
     file = Path(name + ".app")
     bundle(command_list, file)
-    delete_bundle(file)
 
 
 @pytest.mark.ci
@@ -245,7 +229,6 @@ def test_icon() -> None:
     assert plist["CFBundleIconFile"] == name + ".icns"
     icon_file = Path(file) / "Contents" / "Resources" / Path(name + ".icns")
     assert icon_file.is_file()
-    delete_bundle(file)
 
 
 destinations = ["user", "system"]
@@ -280,7 +263,6 @@ def test_destination(destination: str) -> None:
     assert isinstance(prefix, Path)
     file = prefix / "Applications" / "example.app"
     bundle(command_list, file)
-    delete_bundle(file)
 
 
 @pytest.mark.ci
@@ -298,7 +280,6 @@ def test_displayname() -> None:
     bundle(command_list, file)
     plist = get_plist(file)
     assert plist["CFBundleDisplayName"] == name
-    delete_bundle(file)
 
 
 @pytest.mark.ci
@@ -323,6 +304,7 @@ def test_extension(cirunner: bool) -> None:
     ]
     file_with_extension = Path(name + "." + extension)
     bundle(command_list, file)
+    # open to register the extension with MacOS
     open_app(file)
     kill_app(cirunner, name)
     with open(file_with_extension, "w") as test_file:
@@ -340,8 +322,6 @@ def test_extension(cirunner: bool) -> None:
     assert entry2["UTTypeConformsTo"] == "public.data"
     assert entry2["UTTypeDescription"] == datafile
     assert entry2["UTTypeIdentifier"] == identifier
-    delete_bundle(file)
-    os.remove(file_with_extension)
 
 
 types = ["Editor", "Shell", "None"]
@@ -373,7 +353,6 @@ def test_type_role(type_role: str) -> None:
     bundle(command_list, file)
     plist = get_plist(file)
     assert plist["CFBundleDocumentTypes"][0]["CFBundleTypeRole"] == type_role
-    delete_bundle(file)
 
 
 def test_terminal() -> None:
@@ -395,7 +374,6 @@ def test_terminal() -> None:
     # close_last_terminal_window()
     # This does not work if pytest is also called via the command line
     # and consequently skipped
-    delete_bundle(file)
 
 
 @pytest.mark.ci
@@ -423,5 +401,3 @@ def test_executable(cirunner: bool) -> None:
     bundle(command_list, file)
     open_app(file)
     kill_app(cirunner, name)
-    delete_bundle(file)
-    os.remove(name)
