@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import icnsutil
 
@@ -39,11 +39,12 @@ class FileEntry(NamedTuple):
     content : bytes
         The content of the file.
     permissions : str
-        The permissions as an octal string, e.g. '0o755'.
+        The permissions as an octal string, e.g. '0o755'. None skips to
+        set permissions.
     """
 
     content: bytes
-    permissions: str
+    permissions: Optional[str]
 
 
 class _FilesystemDictionary:
@@ -149,7 +150,8 @@ class _FilesystemDictionary:
             elif isinstance(obj, FileEntry):
                 with open(full_path, "wb") as f:
                     f.write(obj.content)
-                os.chmod(full_path, int(obj.permissions, 8))
+                if obj.permissions is not None:
+                    os.chmod(full_path, int(obj.permissions, 8))
 
 
 class ApplicationBundle(_FilesystemDictionary):
@@ -170,7 +172,7 @@ class ApplicationBundle(_FilesystemDictionary):
         self.set_destination("executable")
         self.set_filename(self.clean_executable)
         self.mkdir(Path("Contents") / Path("Resources"))
-        script = FileEntry(Path(executable).read_bytes(), "0o755")
+        script = FileEntry(executable.read_bytes(), oct(executable.stat().st_mode & 0o777))
         self.save_file(Path("Contents") / Path("MacOS") / self.clean_executable, script)
         self.plist_dict = dict(CFBundleExecutable=self.clean_executable)
         self.plist_dict.update(CFBundlePackageType="APPL")
@@ -251,7 +253,7 @@ class ApplicationBundle(_FilesystemDictionary):
         with NamedTemporaryFile(suffix=".icns") as tmp:
             icon_img.write(tmp.name)
             tmp.seek(0)
-            icns = FileEntry(tmp.read(), "0o644")
+            icns = FileEntry(tmp.read(), None)
         self.save_file(Path("Contents") / Path("Resources") / iconsfile, icns)
         self.plist_dict.update(CFBundleIconFile=iconsfile.name)
 
@@ -317,7 +319,7 @@ class ApplicationBundle(_FilesystemDictionary):
         if destination.exists():
             shutil.rmtree(destination)
         plist = plistlib.dumps(self.plist_dict)
-        plist = FileEntry(plist, "0o644")
+        plist = FileEntry(plist, None)
         self.save_file(Path("Contents") / Path("Info.plist"), plist)
         self.write_all_to_disk(destination)
         return destination
