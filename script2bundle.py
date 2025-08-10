@@ -233,7 +233,7 @@ class ApplicationBundle(_FilesystemDictionary):
         # if icon.name[-4:] == ".png":
         #      iconsfile = Path(icon.name[:-4] + ".icns")
         # else:
-        iconsfile = Path(icon.name + ".icns")
+        iconsfile = Path(icon.stem + ".icns")
         icon_img = icnsutil.IcnsFile()
         icon_img.add_media(file=icon)
         with NamedTemporaryFile(suffix=".icns") as tmp:
